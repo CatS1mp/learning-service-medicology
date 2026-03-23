@@ -1,4 +1,4 @@
-package com.medicology.auth;
+package com.medicology.learning;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
