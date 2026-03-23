@@ -1,0 +1,10 @@
+package com.medicology.learning.repository;
+
+import com.medicology.learning.entity.UserDailyStreak;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.UUID;
+
+@Repository
+public interface UserDailyStreakRepository extends JpaRepository<UserDailyStreak, UUID> {
+}
