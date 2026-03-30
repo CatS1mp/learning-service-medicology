@@ -3,18 +3,17 @@ package com.medicology.learning.config;
 import org.springframework.context.annotation.Bean;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
@@ -58,8 +57,19 @@ public class SecurityConfig {
 
         @Bean
         public OpenAPI medicologyOpenAPI() {
+                Server productionServer = new Server()
+                                .url("https://learning-service-medicology-production.up.railway.app")
+                                .description("Server chính thức trên Railway");
+
+                Server localServer = new Server()
+                                .url("http://localhost:8081")
+                                .description("Server chạy ở Local");
+
                 return new OpenAPI()
-                                // 1. Định nghĩa cách thức bảo mật là JWT
+                                // 1. Thêm danh sách Server vào đây
+                                .servers(List.of(productionServer, localServer))
+
+                                // 2. Giữ nguyên phần định nghĩa JWT của bạn
                                 .components(new Components()
                                                 .addSecuritySchemes("bearerAuth",
                                                                 new SecurityScheme()
