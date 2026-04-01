@@ -1,10 +1,15 @@
 package com.medicology.learning.service;
 
+import com.medicology.learning.dto.request.AiFeedbackUpdateRequest;
+import com.medicology.learning.dto.response.AiFeedbackResponse;
 import com.medicology.learning.entity.AiLearningFeedback;
 import com.medicology.learning.repository.AiLearningFeedbackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,5 +38,40 @@ public class AiFeedbackService {
             .build();
             
         return aiFeedbackRepository.save(feedback);
+    }
+
+    public List<AiFeedbackResponse> getAllFeedbacks() {
+        return aiFeedbackRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public AiFeedbackResponse updateFeedback(UUID id, AiFeedbackUpdateRequest request) {
+        AiLearningFeedback feedback = aiFeedbackRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Feedback not found"));
+        feedback.setAiExplanation(request.getAiExplanation());
+        feedback.setIsCorrect(request.getIsCorrect());
+        return mapToResponse(aiFeedbackRepository.save(feedback));
+    }
+
+    public void deleteFeedback(UUID id) {
+        if (!aiFeedbackRepository.existsById(id)) {
+            throw new IllegalArgumentException("Feedback not found");
+        }
+        aiFeedbackRepository.deleteById(id);
+    }
+
+    private AiFeedbackResponse mapToResponse(AiLearningFeedback feedback) {
+        return AiFeedbackResponse.builder()
+                .id(feedback.getId())
+                .userId(feedback.getUserId())
+                .referenceId(feedback.getReferenceId())
+                .referenceType(feedback.getReferenceType())
+                .questionContent(feedback.getQuestionContent())
+                .userAnswer(feedback.getUserAnswer())
+                .isCorrect(feedback.getIsCorrect())
+                .aiExplanation(feedback.getAiExplanation())
+                .createdAt(feedback.getCreatedAt())
+                .build();
     }
 }

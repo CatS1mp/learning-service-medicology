@@ -22,6 +22,11 @@ public class ProgressController {
         return ResponseEntity.ok(progressService.getUserProgress(getUserId(email)));
     }
 
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getProgressByUserId(@PathVariable UUID userId) {
+        return ResponseEntity.ok(progressService.getUserProgress(userId));
+    }
+
     @PostMapping("/streak/ping")
     public ResponseEntity<?> pingStreak(@AuthenticationPrincipal String email) {
         return ResponseEntity.ok(progressService.updateStreak(getUserId(email)));

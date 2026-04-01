@@ -1,11 +1,14 @@
 package com.medicology.learning.controller;
 
+import com.medicology.learning.dto.request.AiFeedbackUpdateRequest;
+import com.medicology.learning.dto.response.AiFeedbackResponse;
 import com.medicology.learning.entity.AiLearningFeedback;
 import com.medicology.learning.service.AiFeedbackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.UUID;
 import java.util.Map;
 
@@ -33,5 +36,21 @@ public class AiFeedbackController {
         return ResponseEntity.ok(aiFeedbackService.generateFeedback(
             getUserId(email), referenceId, refType, question, answer, isCorrect
         ));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AiFeedbackResponse>> getAllFeedbacks() {
+        return ResponseEntity.ok(aiFeedbackService.getAllFeedbacks());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AiFeedbackResponse> updateFeedback(@PathVariable UUID id, @RequestBody AiFeedbackUpdateRequest request) {
+        return ResponseEntity.ok(aiFeedbackService.updateFeedback(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFeedback(@PathVariable UUID id) {
+        aiFeedbackService.deleteFeedback(id);
+        return ResponseEntity.noContent().build();
     }
 }
