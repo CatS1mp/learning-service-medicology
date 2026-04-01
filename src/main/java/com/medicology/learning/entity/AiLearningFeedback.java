@@ -26,16 +26,16 @@ public class AiLearningFeedback {
     @Column(name = "reference_type", length = 20)
     private String referenceType;
 
-    @Column(name = "question_content", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "question_content", columnDefinition = "TEXT")
     private String questionContent;
 
-    @Column(name = "user_answer", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "user_answer", columnDefinition = "TEXT")
     private String userAnswer;
 
     @Column(name = "is_correct")
     private Boolean isCorrect;
 
-    @Column(name = "ai_explanation", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "ai_explanation", columnDefinition = "TEXT")
     private String aiExplanation;
 
     @CreationTimestamp

@@ -44,7 +44,7 @@ public class Course {
     private Boolean isActive = true;
 
     // JSON content
-    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @CreationTimestamp
