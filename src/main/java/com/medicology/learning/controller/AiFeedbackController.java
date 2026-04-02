@@ -4,6 +4,7 @@ import com.medicology.learning.dto.request.AiFeedbackUpdateRequest;
 import com.medicology.learning.dto.response.AiFeedbackResponse;
 import com.medicology.learning.entity.AiLearningFeedback;
 import com.medicology.learning.service.AiFeedbackService;
+import com.medicology.learning.wrapper.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,13 +19,9 @@ import java.util.Map;
 public class AiFeedbackController {
     private final AiFeedbackService aiFeedbackService;
 
-    private UUID getUserId(String email) {
-        return UUID.nameUUIDFromBytes(email.getBytes());
-    }
-
     @PostMapping
     public ResponseEntity<AiLearningFeedback> requestFeedback(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal UserPrincipal user,
             @RequestBody Map<String, Object> request) {
         
         UUID referenceId = UUID.fromString((String) request.get("referenceId"));
@@ -34,7 +31,7 @@ public class AiFeedbackController {
         boolean isCorrect = (Boolean) request.get("isCorrect");
 
         return ResponseEntity.ok(aiFeedbackService.generateFeedback(
-            getUserId(email), referenceId, refType, question, answer, isCorrect
+            user.getId(), referenceId, refType, question, answer, isCorrect
         ));
     }
 

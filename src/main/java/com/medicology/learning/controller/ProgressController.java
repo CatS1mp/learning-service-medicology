@@ -1,6 +1,7 @@
 package com.medicology.learning.controller;
 
 import com.medicology.learning.service.ProgressService;
+import com.medicology.learning.wrapper.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,13 +14,9 @@ import java.util.UUID;
 public class ProgressController {
     private final ProgressService progressService;
 
-    private UUID getUserId(String email) {
-        return UUID.nameUUIDFromBytes(email.getBytes());
-    }
-
     @GetMapping
-    public ResponseEntity<?> getProgress(@AuthenticationPrincipal String email) {
-        return ResponseEntity.ok(progressService.getUserProgress(getUserId(email)));
+    public ResponseEntity<?> getProgress(@AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(progressService.getUserProgress(user.getId()));
     }
 
     @GetMapping("/{userId}")
@@ -28,7 +25,7 @@ public class ProgressController {
     }
 
     @PostMapping("/streak/ping")
-    public ResponseEntity<?> pingStreak(@AuthenticationPrincipal String email) {
-        return ResponseEntity.ok(progressService.updateStreak(getUserId(email)));
+    public ResponseEntity<?> pingStreak(@AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(progressService.updateStreak(user.getId()));
     }
 }

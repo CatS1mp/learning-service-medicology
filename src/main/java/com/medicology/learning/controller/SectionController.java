@@ -21,17 +21,17 @@ public class SectionController {
     // However, Course -> Section is N -> 1. This means course belongs to a section.
     // It is possible the requirement meant GET /api/v1/learning/themes/{themeId}/sections instead. 
     // We will map it to /themes/{themeId}/sections since that is the correct relational hierarchy.
-    @GetMapping("/themes/{themeId}/sections")
-    public ResponseEntity<List<SectionResponse>> getSectionsByTheme(@PathVariable UUID themeId) {
-        return ResponseEntity.ok(sectionService.getSectionsByTheme(themeId));
+    // Moved to /courses/{courseId}/sections to align with domain naming
+    @GetMapping("/courses/{courseId}/sections")
+    public ResponseEntity<List<SectionResponse>> getSectionsByTheme(@PathVariable UUID courseId) {
+        return ResponseEntity.ok(sectionService.getSectionsByTheme(courseId));
     }
 
-    // According to Plan C, POST /api/v1/learning/courses/{courseId}/sections was requested, 
-    // but the entity model requires a Theme ID! We will implement it exactly as Plan C mentions but take Theme ID inside the body.
+    // According to Plan C, POST /api/v1/learning/courses/{courseId}/sections was requested
     @PostMapping("/courses/{courseId}/sections")
     public ResponseEntity<SectionResponse> createSectionByCourseId(
             @PathVariable UUID courseId, @RequestBody SectionRequest request) {
-        // Here courseId is ignored because Section requires ThemeId, which we get from request body.
+        request.setThemeId(courseId); // Make sure DTO handles themeId mapping correctly
         return ResponseEntity.status(HttpStatus.CREATED).body(sectionService.createSection(request));
     }
 

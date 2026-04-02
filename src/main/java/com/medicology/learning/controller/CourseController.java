@@ -15,31 +15,21 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/learning/courses")
+@RequestMapping("/api/v1/learning/lessons")
 @RequiredArgsConstructor
 public class CourseController {
     private final CourseService courseService;
 
-    @GetMapping
-    public ResponseEntity<?> getAllCourses() {
-        return ResponseEntity.ok(courseService.getAllThemes());
-    }
-
-    @GetMapping("/path")
-    public ResponseEntity<?> getLearningPath() {
-        return ResponseEntity.ok(courseService.getLearningPath());
-    }
-
-    @PostMapping("/{courseId}/enroll")
-    public ResponseEntity<String> enrollCourse(@PathVariable UUID courseId,
+    @PostMapping("/{lessonId}/enroll")
+    public ResponseEntity<Course> enrollCourse(@PathVariable UUID lessonId,
             @AuthenticationPrincipal UserPrincipal user) {
-        courseService.enrollCourse(user.getId(), courseId);
-        return ResponseEntity.ok("Enrolled successfully");
+        // Just return the content of the lesson for now, skipping the old empty row creation
+        return ResponseEntity.ok(courseService.getCourseContent(lessonId));
     }
 
-    @GetMapping("/{courseId}")
-    public ResponseEntity<Course> getCourseDetail(@PathVariable UUID courseId) {
-        return ResponseEntity.ok(courseService.getCourseContent(courseId));
+    @GetMapping("/{lessonId}")
+    public ResponseEntity<Course> getCourseDetail(@PathVariable UUID lessonId) {
+        return ResponseEntity.ok(courseService.getCourseContent(lessonId));
     }
 
     @PostMapping
@@ -47,19 +37,19 @@ public class CourseController {
         return ResponseEntity.status(HttpStatus.CREATED).body(courseService.createCourse(request));
     }
 
-    @PutMapping("/{courseId}")
-    public ResponseEntity<CourseResponse> updateCourse(@PathVariable UUID courseId, @RequestBody CourseRequest request) {
-        return ResponseEntity.ok(courseService.updateCourse(courseId, request));
+    @PutMapping("/{lessonId}")
+    public ResponseEntity<CourseResponse> updateCourse(@PathVariable UUID lessonId, @RequestBody CourseRequest request) {
+        return ResponseEntity.ok(courseService.updateCourse(lessonId, request));
     }
 
-    @DeleteMapping("/{courseId}")
-    public ResponseEntity<Void> deleteCourse(@PathVariable UUID courseId) {
-        courseService.deleteCourse(courseId);
+    @DeleteMapping("/{lessonId}")
+    public ResponseEntity<Void> deleteCourse(@PathVariable UUID lessonId) {
+        courseService.deleteCourse(lessonId);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{courseId}/status")
-    public ResponseEntity<CourseResponse> updateCourseStatus(@PathVariable UUID courseId, @RequestBody CourseStatusRequest request) {
-        return ResponseEntity.ok(courseService.updateCourseStatus(courseId, request));
+    @PatchMapping("/{lessonId}/status")
+    public ResponseEntity<CourseResponse> updateCourseStatus(@PathVariable UUID lessonId, @RequestBody CourseStatusRequest request) {
+        return ResponseEntity.ok(courseService.updateCourseStatus(lessonId, request));
     }
 }
