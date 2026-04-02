@@ -17,22 +17,21 @@ import java.util.UUID;
 public class SectionController {
     private final SectionService sectionService;
 
-    // Based on Plan C: GET /api/v1/learning/courses/{courseId}/sections implies getting sections for a course.
-    // However, Course -> Section is N -> 1. This means course belongs to a section.
-    // It is possible the requirement meant GET /api/v1/learning/themes/{themeId}/sections instead. 
-    // We will map it to /themes/{themeId}/sections since that is the correct relational hierarchy.
-    // Moved to /courses/{courseId}/sections to align with domain naming
     @GetMapping("/courses/{courseId}/sections")
-    public ResponseEntity<List<SectionResponse>> getSectionsByTheme(@PathVariable UUID courseId) {
-        return ResponseEntity.ok(sectionService.getSectionsByTheme(courseId));
+    public ResponseEntity<List<SectionResponse>> getSectionsByCourse(@PathVariable UUID courseId) {
+        return ResponseEntity.ok(sectionService.getSectionsByCourse(courseId));
     }
 
-    // According to Plan C, POST /api/v1/learning/courses/{courseId}/sections was requested
     @PostMapping("/courses/{courseId}/sections")
-    public ResponseEntity<SectionResponse> createSectionByCourseId(
+    public ResponseEntity<SectionResponse> createSectionInCourse(
             @PathVariable UUID courseId, @RequestBody SectionRequest request) {
-        request.setThemeId(courseId); // Make sure DTO handles themeId mapping correctly
+        request.setCourseId(courseId);
         return ResponseEntity.status(HttpStatus.CREATED).body(sectionService.createSection(request));
+    }
+
+    @GetMapping("/sections/{sectionId}")
+    public ResponseEntity<SectionResponse> getSectionDetail(@PathVariable UUID sectionId) {
+        return ResponseEntity.ok(sectionService.getSectionById(sectionId));
     }
 
     @PutMapping("/sections/{sectionId}")

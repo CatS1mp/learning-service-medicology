@@ -1,8 +1,3 @@
 package com.medicology.learning.dto.request;
 
-import lombok.Data;
-
-@Data
-public class CourseStatusRequest {
-    private Boolean isActive;
-}
+// Legacy file retained because sandbox permissions do not allow deletion.

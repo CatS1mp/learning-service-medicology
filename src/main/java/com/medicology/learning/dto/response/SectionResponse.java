@@ -9,7 +9,7 @@ import java.util.UUID;
 @Builder
 public class SectionResponse {
     private UUID id;
-    private UUID themeId;
+    private UUID courseId;
     private String name;
     private String slug;
     private Integer orderIndex;
