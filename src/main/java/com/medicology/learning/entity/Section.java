@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -19,8 +20,8 @@ public class Section {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "theme_id", nullable = false)
-    private Theme theme;
+    @JoinColumn(name = "course_id", nullable = false)
+    private Course course;
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -33,6 +34,10 @@ public class Section {
 
     @Column(name = "estimated_duration_minutes")
     private Integer estimatedDurationMinutes;
+
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("orderIndex ASC")
+    private List<Lesson> lessons;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

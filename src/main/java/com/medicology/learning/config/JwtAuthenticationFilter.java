@@ -1,6 +1,7 @@
 package com.medicology.learning.config;
 
 import com.medicology.learning.security.jwt.JWTDecoder;
+import com.medicology.learning.wrapper.UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
+import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -53,9 +55,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Trong Learning Service, ta không cần truy vấn DB User nữa, chỉ cần trích xuất email/id từ Token là đủ xác thực
                 // Kiểm tra tính hợp lệ của token
                 if (jwtDecoder.isTokenValid(jwt, "access")) {
+                    String userIdStr = jwtDecoder.extractId(jwt);
+                    UUID userId = userIdStr != null ? UUID.fromString(userIdStr) : null;
+                    UserPrincipal principal = new UserPrincipal(userId, userIdentifier);
+
                     // 4. Khởi tạo đối tượng xác thực (chỉ có userIdentifier và ROLES rỗng)
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userIdentifier,
+                            principal,
                             null,
                             Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
                     );

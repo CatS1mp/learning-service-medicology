@@ -1,9 +1,9 @@
 package com.medicology.learning.service;
 
-import com.medicology.learning.entity.UserCourse;
 import com.medicology.learning.entity.UserDailyStreak;
-import com.medicology.learning.repository.UserCourseRepository;
+import com.medicology.learning.entity.UserLesson;
 import com.medicology.learning.repository.UserDailyStreakRepository;
+import com.medicology.learning.repository.UserLessonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,11 +14,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ProgressService {
-    private final UserCourseRepository userCourseRepository;
+    private final UserLessonRepository userLessonRepository;
     private final UserDailyStreakRepository userDailyStreakRepository;
 
-    public List<UserCourse> getUserProgress(UUID userId) {
-        return userCourseRepository.findByUserId(userId);
+    public List<UserLesson> getUserProgress(UUID userId) {
+        return userLessonRepository.findByUserId(userId);
     }
 
     public UserDailyStreak updateStreak(UUID userId) {

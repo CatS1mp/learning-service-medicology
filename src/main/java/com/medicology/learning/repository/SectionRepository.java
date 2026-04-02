@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface SectionRepository extends JpaRepository<Section, UUID> {
-    List<Section> findByThemeIdOrderByOrderIndexAsc(UUID themeId);
+    List<Section> findByCourseIdOrderByOrderIndexAsc(UUID courseId);
 }

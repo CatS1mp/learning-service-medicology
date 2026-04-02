@@ -1,128 +1,85 @@
 package com.medicology.learning.service;
 
 import com.medicology.learning.dto.request.CourseRequest;
-import com.medicology.learning.dto.request.CourseStatusRequest;
 import com.medicology.learning.dto.response.CourseResponse;
 import com.medicology.learning.entity.Course;
-import com.medicology.learning.entity.Section;
-import com.medicology.learning.entity.Theme;
-import com.medicology.learning.entity.UserCourse;
-import com.medicology.learning.entity.UserCourseId;
 import com.medicology.learning.repository.CourseRepository;
-import com.medicology.learning.repository.SectionRepository;
-import com.medicology.learning.repository.ThemeRepository;
-import com.medicology.learning.repository.UserCourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CourseService {
-    private final ThemeRepository themeRepository;
-    private final SectionRepository sectionRepository;
     private final CourseRepository courseRepository;
-    private final UserCourseRepository userCourseRepository;
+    private final SectionService sectionService;
 
-    public List<Theme> getAllThemes() {
-        return themeRepository.findAll();
+    public List<CourseResponse> getAllCourses() {
+        return courseRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    public List<Section> getSectionsByTheme(UUID themeId) {
-        return sectionRepository.findByThemeIdOrderByOrderIndexAsc(themeId);
+    public CourseResponse getCourseById(UUID courseId) {
+        return courseRepository.findById(courseId)
+                .map(this::mapToResponse)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
     }
 
-    public List<Course> getCoursesBySection(UUID sectionId) {
-        return courseRepository.findBySectionIdOrderByOrderIndexAsc(sectionId);
+    public CourseResponse createCourse(CourseRequest request) {
+        Course course = Course.builder()
+                .name(request.getName())
+                .slug(request.getSlug())
+                .description(request.getDescription())
+                .iconFileName(request.getIconFileName())
+                .colorCode(request.getColorCode())
+                .orderIndex(request.getOrderIndex())
+                .build();
+        return mapToResponse(courseRepository.save(course));
+    }
+
+    public CourseResponse updateCourse(UUID courseId, CourseRequest request) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
+        course.setName(request.getName());
+        course.setSlug(request.getSlug());
+        course.setDescription(request.getDescription());
+        course.setIconFileName(request.getIconFileName());
+        course.setColorCode(request.getColorCode());
+        course.setOrderIndex(request.getOrderIndex());
+        return mapToResponse(courseRepository.save(course));
+    }
+
+    public void deleteCourse(UUID courseId) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new IllegalArgumentException("Course not found with ID: " + courseId);
+        }
+        courseRepository.deleteById(courseId);
     }
 
     public Map<String, Object> getLearningPath() {
         Map<String, Object> path = new HashMap<>();
-        path.put("themes", themeRepository.findAll());
+        path.put("courses", getAllCourses());
         return path;
-    }
-
-    public Course getCourseContent(UUID courseId) {
-        return courseRepository.findById(courseId)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found"));
-    }
-
-    public void enrollCourse(UUID userId, UUID courseId) {
-        UserCourseId id = new UserCourseId(userId, courseId);
-        if (!userCourseRepository.existsById(id)) {
-            UserCourse enrollment = UserCourse.builder()
-                .userId(userId)
-                .courseId(courseId)
-                .quizzesCorrect(0)
-                .build();
-            userCourseRepository.save(enrollment);
-        }
-    }
-
-    public CourseResponse createCourse(CourseRequest request) {
-        Section section = sectionRepository.findById(request.getSectionId())
-                .orElseThrow(() -> new IllegalArgumentException("Section not found with ID: " + request.getSectionId()));
-        Course course = Course.builder()
-                .section(section)
-                .name(request.getName())
-                .description(request.getDescription())
-                .slug(request.getSlug())
-                .orderIndex(request.getOrderIndex())
-                .estimatedDurationMinutes(request.getEstimatedDurationMinutes())
-                .difficultyLevel(request.getDifficultyLevel())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .content(request.getContent())
-                .build();
-        return mapToResponse(courseRepository.save(course));
-    }
-
-    public CourseResponse updateCourse(UUID id, CourseRequest request) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + id));
-        Section section = sectionRepository.findById(request.getSectionId())
-                .orElseThrow(() -> new IllegalArgumentException("Section not found with ID: " + request.getSectionId()));
-        course.setSection(section);
-        course.setName(request.getName());
-        course.setDescription(request.getDescription());
-        course.setSlug(request.getSlug());
-        course.setOrderIndex(request.getOrderIndex());
-        course.setEstimatedDurationMinutes(request.getEstimatedDurationMinutes());
-        course.setDifficultyLevel(request.getDifficultyLevel());
-        course.setIsActive(request.getIsActive());
-        course.setContent(request.getContent());
-        return mapToResponse(courseRepository.save(course));
-    }
-
-    public CourseResponse updateCourseStatus(UUID id, CourseStatusRequest request) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + id));
-        course.setIsActive(request.getIsActive());
-        return mapToResponse(courseRepository.save(course));
-    }
-
-    public void deleteCourse(UUID id) {
-        if (!courseRepository.existsById(id)) {
-            throw new IllegalArgumentException("Course not found with ID: " + id);
-        }
-        courseRepository.deleteById(id);
     }
 
     private CourseResponse mapToResponse(Course course) {
         return CourseResponse.builder()
                 .id(course.getId())
-                .sectionId(course.getSection().getId())
                 .name(course.getName())
-                .description(course.getDescription())
                 .slug(course.getSlug())
+                .description(course.getDescription())
+                .iconFileName(course.getIconFileName())
+                .colorCode(course.getColorCode())
                 .orderIndex(course.getOrderIndex())
-                .estimatedDurationMinutes(course.getEstimatedDurationMinutes())
-                .difficultyLevel(course.getDifficultyLevel())
-                .isActive(course.getIsActive())
-                .content(course.getContent())
+                .sections(course.getSections() != null ? course.getSections().stream()
+                        .map(sectionService::mapToResponse)
+                        .collect(Collectors.toList()) : null)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();
