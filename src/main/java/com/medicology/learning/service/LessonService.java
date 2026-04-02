@@ -80,7 +80,7 @@ public class LessonService {
         lessonRepository.deleteById(lessonId);
     }
 
-    private LessonResponse mapToResponse(Lesson lesson) {
+    public LessonResponse mapToResponse(Lesson lesson) {
         return LessonResponse.builder()
                 .id(lesson.getId())
                 .sectionId(lesson.getSection().getId())

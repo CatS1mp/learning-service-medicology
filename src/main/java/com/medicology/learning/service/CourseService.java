@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CourseService {
     private final CourseRepository courseRepository;
+    private final SectionService sectionService;
 
     public List<CourseResponse> getAllCourses() {
         return courseRepository.findAll().stream()
@@ -76,6 +77,9 @@ public class CourseService {
                 .iconFileName(course.getIconFileName())
                 .colorCode(course.getColorCode())
                 .orderIndex(course.getOrderIndex())
+                .sections(course.getSections() != null ? course.getSections().stream()
+                        .map(sectionService::mapToResponse)
+                        .collect(Collectors.toList()) : null)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();

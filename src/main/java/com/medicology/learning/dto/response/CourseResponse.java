@@ -3,6 +3,7 @@ package com.medicology.learning.dto.response;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -15,6 +16,7 @@ public class CourseResponse {
     private String iconFileName;
     private String colorCode;
     private Integer orderIndex;
+    private List<SectionResponse> sections;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class SectionService {
     private final SectionRepository sectionRepository;
     private final CourseRepository courseRepository;
+    private final LessonService lessonService;
 
     public List<SectionResponse> getSectionsByCourse(UUID courseId) {
         return sectionRepository.findByCourseIdOrderByOrderIndexAsc(courseId).stream()
@@ -72,6 +73,9 @@ public class SectionService {
                 .slug(section.getSlug())
                 .orderIndex(section.getOrderIndex())
                 .estimatedDurationMinutes(section.getEstimatedDurationMinutes())
+                .lessons(section.getLessons() != null ? section.getLessons().stream()
+                        .map(lessonService::mapToResponse)
+                        .collect(Collectors.toList()) : null)
                 .createdAt(section.getCreatedAt())
                 .updatedAt(section.getUpdatedAt())
                 .build();

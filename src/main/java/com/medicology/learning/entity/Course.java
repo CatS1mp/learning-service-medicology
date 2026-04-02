@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -35,6 +36,10 @@ public class Course {
 
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("orderIndex ASC")
+    private List<Section> sections;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
