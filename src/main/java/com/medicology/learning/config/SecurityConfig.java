@@ -8,7 +8,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.config.Customizer;
 
+import java.util.Arrays;
 import java.util.List;
 
 import io.swagger.v3.oas.models.Components;
@@ -28,29 +33,31 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http.csrf(csrf -> csrf.disable())
-                                .authorizeHttpRequests(auth -> auth
-                                                // 1. Mở cửa hoàn toàn cho Swagger và các file cấu hình của nó
-                                                .requestMatchers(
-                                                                "/v3/api-docs/**",
-                                                                "/v3/api-docs",
-                                                                "/swagger-ui/**",
-                                                                "/swagger-ui.html",
-                                                                "/api-docs/**" // Thêm dòng này vì lỗi của bạn đang báo
-                                                // ở đây
-                                                ).permitAll()
+                        .cors(Customizer.withDefaults())
+                        .authorizeHttpRequests(auth -> auth
+                                // 1. Mở cửa hoàn toàn cho Swagger và các file cấu hình của nó
+                                .requestMatchers(
+                                        "/",
+                                        "/v3/api-docs/**",
+                                        "/v3/api-docs",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/api-docs/**" // Thêm dòng này vì lỗi của bạn đang báo
+                                // ở đây
+                                ).permitAll()
 
-                                                // 2. Mở cửa cho API Auth của Medicology (kiểm tra kỹ có /medicology ở
-                                                // đầu
-                                                // không)
-                                                .requestMatchers("/api/v1/auth/**").permitAll()
+                                // 2. Mở cửa cho API Auth của Medicology (kiểm tra kỹ có /medicology ở
+                                // đầu
+                                // không)
+                                .requestMatchers("/api/v1/auth/**").permitAll()
 
-                                                // 3. Các request khác mới cần login
-                                                .anyRequest().authenticated())
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                // 3. Các request khác mới cần login
+                                .anyRequest().authenticated())
+                        .sessionManagement(session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                                // 5. CHÈN FILTER: Chạy JwtAuthFilter TRƯỚC UsernamePasswordAuthenticationFilter
-                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                        // 5. CHÈN FILTER: Chạy JwtAuthFilter TRƯỚC UsernamePasswordAuthenticationFilter
+                        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();
         }
@@ -58,27 +65,49 @@ public class SecurityConfig {
         @Bean
         public OpenAPI medicologyOpenAPI() {
                 Server productionServer = new Server()
-                                .url("https://learning-service-medicology-production.up.railway.app")
-                                .description("Server chính thức trên Railway");
+                        .url("https://learning-service-medicology-eae21d20151f.herokuapp.com")
+                        .description("Server chính thức trên Heroku");
 
                 Server localServer = new Server()
-                                .url("http://localhost:8081")
-                                .description("Server chạy ở Local");
+                        .url("http://localhost:8081")
+                        .description("Server chạy ở Local");
 
                 return new OpenAPI()
-                                // 1. Thêm danh sách Server vào đây
-                                .servers(List.of(productionServer, localServer))
+                        // 1. Thêm danh sách Server vào đây
+                        .servers(List.of(productionServer, localServer))
 
-                                // 2. Giữ nguyên phần định nghĩa JWT của bạn
-                                .components(new Components()
-                                                .addSecuritySchemes("bearerAuth",
-                                                                new SecurityScheme()
-                                                                                .type(SecurityScheme.Type.HTTP)
-                                                                                .scheme("bearer")
-                                                                                .bearerFormat("JWT")))
-                                // 2. Áp dụng bảo mật này cho tất cả API trong tài liệu
-                                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
+                        // 2. Giữ nguyên phần định nghĩa JWT của bạn
+                        .components(new Components()
+                                .addSecuritySchemes("bearerAuth",
+                                        new SecurityScheme()
+                                                .type(SecurityScheme.Type.HTTP)
+                                                .scheme("bearer")
+                                                .bearerFormat("JWT")))
+                        // 2. Áp dụng bảo mật này cho tất cả API trong tài liệu
+                        .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
         }
         // Các cấu hình SecurityFilterChain khác của bạn...
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
+                
+                // 1. Cho phép các nguồn gửi yêu cầu
+                configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                        "http://localhost:8081"
+                ));
+                
+                // 2. Cho phép các phương thức HTTPS
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
+                
+                // 3. Cho phép tất cả các Header (Authorization, Content-Type, v.v.)
+                configuration.setAllowedHeaders(Arrays.asList("*"));
+                
+                // 4. Cho phép gửi kèm Cookie/Auth Header
+                configuration.setAllowCredentials(true);
 
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 }
