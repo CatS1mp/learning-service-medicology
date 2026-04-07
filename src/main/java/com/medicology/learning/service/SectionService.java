@@ -2,6 +2,7 @@ package com.medicology.learning.service;
 
 import com.medicology.learning.dto.request.SectionRequest;
 import com.medicology.learning.dto.response.SectionResponse;
+import com.medicology.learning.dto.response.SectionSummaryResponse;
 import com.medicology.learning.entity.Course;
 import com.medicology.learning.entity.Section;
 import com.medicology.learning.repository.CourseRepository;
@@ -20,9 +21,9 @@ public class SectionService {
     private final CourseRepository courseRepository;
     private final LessonService lessonService;
 
-    public List<SectionResponse> getSectionsByCourse(UUID courseId) {
+    public List<SectionSummaryResponse> getSectionsByCourse(UUID courseId) {
         return sectionRepository.findByCourseIdOrderByOrderIndexAsc(courseId).stream()
-                .map(this::mapToResponse)
+                .map(this::mapToSummaryResponse)
                 .collect(Collectors.toList());
     }
 
@@ -74,7 +75,22 @@ public class SectionService {
                 .orderIndex(section.getOrderIndex())
                 .estimatedDurationMinutes(section.getEstimatedDurationMinutes())
                 .lessons(section.getLessons() != null ? section.getLessons().stream()
-                        .map(lessonService::mapToResponse)
+                        .map(lessonService::mapToSummaryResponse)
+                        .collect(Collectors.toList()) : null)
+                .createdAt(section.getCreatedAt())
+                .updatedAt(section.getUpdatedAt())
+                .build();
+    }
+
+    public SectionSummaryResponse mapToSummaryResponse(Section section) {
+        return SectionSummaryResponse.builder()
+                .id(section.getId())
+                .name(section.getName())
+                .slug(section.getSlug())
+                .orderIndex(section.getOrderIndex())
+                .estimatedDurationMinutes(section.getEstimatedDurationMinutes())
+                .lessons(section.getLessons() != null ? section.getLessons().stream()
+                        .map(lessonService::mapToSummaryResponse)
                         .collect(Collectors.toList()) : null)
                 .createdAt(section.getCreatedAt())
                 .updatedAt(section.getUpdatedAt())

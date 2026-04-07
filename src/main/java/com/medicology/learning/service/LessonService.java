@@ -3,6 +3,7 @@ package com.medicology.learning.service;
 import com.medicology.learning.dto.request.LessonRequest;
 import com.medicology.learning.dto.request.LessonStatusRequest;
 import com.medicology.learning.dto.response.LessonResponse;
+import com.medicology.learning.dto.response.LessonSummaryResponse;
 import com.medicology.learning.entity.Lesson;
 import com.medicology.learning.entity.Section;
 import com.medicology.learning.repository.LessonRepository;
@@ -20,9 +21,9 @@ public class LessonService {
     private final SectionRepository sectionRepository;
     private final LessonRepository lessonRepository;
 
-    public List<LessonResponse> getLessonsBySection(UUID sectionId) {
+    public List<LessonSummaryResponse> getLessonsBySection(UUID sectionId) {
         return lessonRepository.findBySectionIdOrderByOrderIndexAsc(sectionId).stream()
-                .map(this::mapToResponse)
+                .map(this::mapToSummaryResponse)
                 .collect(Collectors.toList());
     }
 
@@ -84,6 +85,22 @@ public class LessonService {
         return LessonResponse.builder()
                 .id(lesson.getId())
                 .sectionId(lesson.getSection().getId())
+                .name(lesson.getName())
+                .description(lesson.getDescription())
+                .slug(lesson.getSlug())
+                .orderIndex(lesson.getOrderIndex())
+                .estimatedDurationMinutes(lesson.getEstimatedDurationMinutes())
+                .difficultyLevel(lesson.getDifficultyLevel())
+                .isActive(lesson.getIsActive())
+                .content(lesson.getContent())
+                .createdAt(lesson.getCreatedAt())
+                .updatedAt(lesson.getUpdatedAt())
+                .build();
+    }
+
+    public LessonSummaryResponse mapToSummaryResponse(Lesson lesson) {
+        return LessonSummaryResponse.builder()
+                .id(lesson.getId())
                 .name(lesson.getName())
                 .description(lesson.getDescription())
                 .slug(lesson.getSlug())

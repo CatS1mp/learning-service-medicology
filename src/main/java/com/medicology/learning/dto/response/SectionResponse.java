@@ -15,7 +15,7 @@ public class SectionResponse {
     private String slug;
     private Integer orderIndex;
     private Integer estimatedDurationMinutes;
-    private List<LessonResponse> lessons;
+    private List<LessonSummaryResponse> lessons;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
