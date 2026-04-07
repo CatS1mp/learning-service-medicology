@@ -1,8 +1,10 @@
 package com.medicology.learning.controller;
 
+import com.medicology.learning.dto.common.ApiResponse;
 import com.medicology.learning.dto.request.LessonRequest;
 import com.medicology.learning.dto.request.LessonStatusRequest;
 import com.medicology.learning.dto.response.LessonResponse;
+import com.medicology.learning.dto.response.LessonSummaryResponse;
 import com.medicology.learning.service.LessonService;
 import com.medicology.learning.wrapper.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -21,43 +23,54 @@ public class LessonController {
     private final LessonService lessonService;
 
     @GetMapping("/sections/{sectionId}/lessons")
-    public ResponseEntity<List<LessonResponse>> getLessonsBySection(@PathVariable UUID sectionId) {
-        return ResponseEntity.ok(lessonService.getLessonsBySection(sectionId));
+    public ResponseEntity<ApiResponse<List<LessonSummaryResponse>>> getLessonsBySection(@PathVariable UUID sectionId) {
+        return ResponseEntity.ok(ApiResponse.success(lessonService.getLessonsBySection(sectionId)));
     }
 
     @PostMapping({"/lessons/{lessonId}/enroll", "/courses/{lessonId}/enroll"})
-    public ResponseEntity<LessonResponse> enrollLesson(@PathVariable UUID lessonId,
+    public ResponseEntity<ApiResponse<LessonResponse>> enrollLesson(@PathVariable UUID lessonId,
             @AuthenticationPrincipal UserPrincipal user) {
-        return ResponseEntity.ok(lessonService.getLessonDetail(lessonId));
+        return ResponseEntity.ok(ApiResponse.success(
+                HttpStatus.OK.value(),
+                "Lesson enrollment fetched successfully",
+                lessonService.getLessonDetail(lessonId)));
     }
 
     @GetMapping("/lessons/{lessonId}")
-    public ResponseEntity<LessonResponse> getLessonDetail(@PathVariable UUID lessonId) {
-        return ResponseEntity.ok(lessonService.getLessonDetail(lessonId));
+    public ResponseEntity<ApiResponse<LessonResponse>> getLessonDetail(@PathVariable UUID lessonId) {
+        return ResponseEntity.ok(ApiResponse.success(lessonService.getLessonDetail(lessonId)));
     }
 
     @PostMapping({"/lessons", "/sections/{sectionId}/lessons"})
-    public ResponseEntity<LessonResponse> createLesson(@PathVariable(required = false) UUID sectionId,
+    public ResponseEntity<ApiResponse<LessonResponse>> createLesson(@PathVariable(required = false) UUID sectionId,
             @RequestBody LessonRequest request) {
         if (sectionId != null) {
             request.setSectionId(sectionId);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(lessonService.createLesson(request));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(HttpStatus.CREATED.value(), "Lesson created successfully",
+                        lessonService.createLesson(request)));
     }
 
     @PutMapping("/lessons/{lessonId}")
-    public ResponseEntity<LessonResponse> updateLesson(@PathVariable UUID lessonId, @RequestBody LessonRequest request) {
-        return ResponseEntity.ok(lessonService.updateLesson(lessonId, request));
+    public ResponseEntity<ApiResponse<LessonResponse>> updateLesson(@PathVariable UUID lessonId, @RequestBody LessonRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                HttpStatus.OK.value(),
+                "Lesson updated successfully",
+                lessonService.updateLesson(lessonId, request)));
     }
 
     @DeleteMapping("/lessons/{lessonId}")
-    public ResponseEntity<Void> deleteLesson(@PathVariable UUID lessonId) {
+    public ResponseEntity<ApiResponse<Void>> deleteLesson(@PathVariable UUID lessonId) {
         lessonService.deleteLesson(lessonId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK.value(), "Lesson deleted successfully", null));
     }
 
     @PatchMapping("/lessons/{lessonId}/status")
-    public ResponseEntity<LessonResponse> updateLessonStatus(@PathVariable UUID lessonId, @RequestBody LessonStatusRequest request) {
-        return ResponseEntity.ok(lessonService.updateLessonStatus(lessonId, request));
+    public ResponseEntity<ApiResponse<LessonResponse>> updateLessonStatus(@PathVariable UUID lessonId, @RequestBody LessonStatusRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                HttpStatus.OK.value(),
+                "Lesson status updated successfully",
+                lessonService.updateLessonStatus(lessonId, request)));
     }
 }
