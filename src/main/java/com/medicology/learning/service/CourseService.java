@@ -78,7 +78,7 @@ public class CourseService {
                 .colorCode(course.getColorCode())
                 .orderIndex(course.getOrderIndex())
                 .sections(course.getSections() != null ? course.getSections().stream()
-                        .map(sectionService::mapToResponse)
+                        .map(sectionService::mapToSummaryResponse)
                         .collect(Collectors.toList()) : null)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
