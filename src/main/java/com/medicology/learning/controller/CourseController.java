@@ -29,6 +29,11 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success(courseService.getCourseById(courseId)));
     }
 
+    @GetMapping("/{courseId}/roadmap")
+    public ResponseEntity<ApiResponse<CourseResponse>> getCourseRoadmap(@PathVariable UUID courseId) {
+        return ResponseEntity.ok(ApiResponse.success(courseService.getCourseRoadmap(courseId)));
+    }
+
     @GetMapping("/path")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getLearningPath() {
         return ResponseEntity.ok(ApiResponse.success(courseService.getLearningPath()));

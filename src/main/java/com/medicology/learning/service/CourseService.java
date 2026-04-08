@@ -31,6 +31,10 @@ public class CourseService {
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
     }
 
+    public CourseResponse getCourseRoadmap(UUID courseId) {
+        return getCourseById(courseId);
+    }
+
     public CourseResponse createCourse(CourseRequest request) {
         Course course = Course.builder()
                 .name(request.getName())

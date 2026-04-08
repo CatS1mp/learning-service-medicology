@@ -6,11 +6,14 @@ import com.medicology.learning.dto.response.LessonResponse;
 import com.medicology.learning.dto.response.LessonSummaryResponse;
 import com.medicology.learning.entity.Lesson;
 import com.medicology.learning.entity.Section;
+import com.medicology.learning.entity.UserLesson;
 import com.medicology.learning.repository.LessonRepository;
 import com.medicology.learning.repository.SectionRepository;
+import com.medicology.learning.repository.UserLessonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 public class LessonService {
     private final SectionRepository sectionRepository;
     private final LessonRepository lessonRepository;
+    private final UserLessonRepository userLessonRepository;
 
     public List<LessonSummaryResponse> getLessonsBySection(UUID sectionId) {
         return lessonRepository.findBySectionIdOrderByOrderIndexAsc(sectionId).stream()
@@ -31,6 +35,26 @@ public class LessonService {
         return lessonRepository.findById(lessonId)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new IllegalArgumentException("Lesson not found with ID: " + lessonId));
+    }
+
+    public void completeLesson(UUID lessonId, UUID userId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new IllegalArgumentException("Lesson not found with ID: " + lessonId));
+
+        UserLesson userLesson = userLessonRepository.findByUserIdAndLessonId(userId, lessonId)
+                .orElseGet(() -> UserLesson.builder()
+                        .userId(userId)
+                        .lessonId(lessonId)
+                        .lesson(lesson)
+                        .quizzesCorrect(0)
+                        .build());
+
+        userLesson.setLesson(lesson);
+        userLesson.setCompletedAt(LocalDateTime.now());
+        if (userLesson.getQuizzesCorrect() == null) {
+            userLesson.setQuizzesCorrect(0);
+        }
+        userLessonRepository.save(userLesson);
     }
 
     public LessonResponse createLesson(LessonRequest request) {

@@ -36,6 +36,14 @@ public class LessonController {
                 lessonService.getLessonDetail(lessonId)));
     }
 
+    @PostMapping("/lessons/{lessonId}/complete")
+    public ResponseEntity<ApiResponse<Void>> completeLesson(
+            @PathVariable UUID lessonId,
+            @AuthenticationPrincipal UserPrincipal user) {
+        lessonService.completeLesson(lessonId, user.getId());
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK.value(), "Lesson completed successfully", null));
+    }
+
     @GetMapping("/lessons/{lessonId}")
     public ResponseEntity<ApiResponse<LessonResponse>> getLessonDetail(@PathVariable UUID lessonId) {
         return ResponseEntity.ok(ApiResponse.success(lessonService.getLessonDetail(lessonId)));
