@@ -4,9 +4,11 @@ import com.medicology.learning.dto.common.ApiResponse;
 import com.medicology.learning.dto.request.CourseRequest;
 import com.medicology.learning.dto.response.CourseResponse;
 import com.medicology.learning.service.CourseService;
+import com.medicology.learning.wrapper.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +26,12 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success(courseService.getAllCourses()));
     }
 
+    @GetMapping("/enrolled")
+    public ResponseEntity<ApiResponse<List<CourseResponse>>> getEnrolledCourses(
+            @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(ApiResponse.success(courseService.getEnrolledCourses(user.getId())));
+    }
+
     @GetMapping("/{courseId}")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourseDetail(@PathVariable UUID courseId) {
         return ResponseEntity.ok(ApiResponse.success(courseService.getCourseById(courseId)));
@@ -37,6 +45,17 @@ public class CourseController {
     @GetMapping("/path")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getLearningPath() {
         return ResponseEntity.ok(ApiResponse.success(courseService.getLearningPath()));
+    }
+
+    @PostMapping("/{courseId}/enroll")
+    public ResponseEntity<ApiResponse<CourseResponse>> enrollCourse(
+            @PathVariable UUID courseId,
+            @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        HttpStatus.CREATED.value(),
+                        "Course enrolled successfully",
+                        courseService.enrollCourse(user.getId(), courseId)));
     }
 
     @PostMapping

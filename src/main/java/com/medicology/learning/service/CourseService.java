@@ -3,7 +3,10 @@ package com.medicology.learning.service;
 import com.medicology.learning.dto.request.CourseRequest;
 import com.medicology.learning.dto.response.CourseResponse;
 import com.medicology.learning.entity.Course;
+import com.medicology.learning.entity.UserCourse;
+import com.medicology.learning.entity.UserCourseStatus;
 import com.medicology.learning.repository.CourseRepository;
+import com.medicology.learning.repository.UserCourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CourseService {
     private final CourseRepository courseRepository;
+    private final UserCourseRepository userCourseRepository;
     private final SectionService sectionService;
 
     public List<CourseResponse> getAllCourses() {
@@ -70,6 +74,33 @@ public class CourseService {
         Map<String, Object> path = new HashMap<>();
         path.put("courses", getAllCourses());
         return path;
+    }
+
+    public List<CourseResponse> getEnrolledCourses(UUID userId) {
+        return userCourseRepository.findByUserIdAndStatusOrderByEnrolledAtDesc(userId, UserCourseStatus.ENROLLED)
+                .stream()
+                .map(UserCourse::getCourse)
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public CourseResponse enrollCourse(UUID userId, UUID courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
+
+        UserCourse userCourse = userCourseRepository.findByUserIdAndCourseId(userId, courseId)
+                .map(existing -> {
+                    existing.setStatus(UserCourseStatus.ENROLLED);
+                    return existing;
+                })
+                .orElseGet(() -> UserCourse.builder()
+                        .userId(userId)
+                        .courseId(courseId)
+                        .status(UserCourseStatus.ENROLLED)
+                        .build());
+
+        userCourseRepository.save(userCourse);
+        return mapToResponse(course);
     }
 
     private CourseResponse mapToResponse(Course course) {
