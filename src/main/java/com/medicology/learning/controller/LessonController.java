@@ -27,7 +27,7 @@ public class LessonController {
         return ResponseEntity.ok(ApiResponse.success(lessonService.getLessonsBySection(sectionId)));
     }
 
-    @PostMapping({"/lessons/{lessonId}/enroll", "/courses/{lessonId}/enroll"})
+    @PostMapping("/lessons/{lessonId}/enroll")
     public ResponseEntity<ApiResponse<LessonResponse>> enrollLesson(@PathVariable UUID lessonId,
             @AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.ok(ApiResponse.success(

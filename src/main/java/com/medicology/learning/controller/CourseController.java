@@ -54,14 +54,15 @@ public class CourseController {
     }
 
     @PostMapping("/{courseId}/enroll")
-    public ResponseEntity<ApiResponse<CourseResponse>> enrollCourse(
+    public ResponseEntity<ApiResponse<Void>> enrollCourse(
             @PathVariable UUID courseId,
             @AuthenticationPrincipal UserPrincipal user) {
+        courseService.enrollCourse(user.getId(), courseId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(
                         HttpStatus.CREATED.value(),
                         "Course enrolled successfully",
-                        courseService.enrollCourse(user.getId(), courseId)));
+                        null));
     }
 
     @PostMapping

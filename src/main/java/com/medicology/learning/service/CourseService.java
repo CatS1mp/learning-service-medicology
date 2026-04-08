@@ -82,7 +82,7 @@ public class CourseService {
         return userCourseRepository.findByUserIdAndStatusOrderByEnrolledAtDesc(userId, UserCourseStatus.ENROLLED)
                 .stream()
                 .map(UserCourse::getCourse)
-                .map(this::mapToResponse)
+                .map(this::mapToListResponse)
                 .collect(Collectors.toList());
     }
 
@@ -95,12 +95,12 @@ public class CourseService {
 
         return courseRepository.findAll().stream()
                 .filter(course -> !enrolledCourseIds.contains(course.getId()))
-                .map(this::mapToResponse)
+                .map(this::mapToListResponse)
                 .collect(Collectors.toList());
     }
 
-    public CourseResponse enrollCourse(UUID userId, UUID courseId) {
-        Course course = courseRepository.findById(courseId)
+    public void enrollCourse(UUID userId, UUID courseId) {
+        courseRepository.findById(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
 
         UserCourse userCourse = userCourseRepository.findByUserIdAndCourseId(userId, courseId)
@@ -115,7 +115,6 @@ public class CourseService {
                         .build());
 
         userCourseRepository.save(userCourse);
-        return mapToResponse(course);
     }
 
     private CourseResponse mapToResponse(Course course) {
@@ -130,6 +129,21 @@ public class CourseService {
                 .sections(course.getSections() != null ? course.getSections().stream()
                         .map(sectionService::mapToSummaryResponse)
                         .collect(Collectors.toList()) : null)
+                .createdAt(course.getCreatedAt())
+                .updatedAt(course.getUpdatedAt())
+                .build();
+    }
+
+    private CourseResponse mapToListResponse(Course course) {
+        return CourseResponse.builder()
+                .id(course.getId())
+                .name(course.getName())
+                .slug(course.getSlug())
+                .description(course.getDescription())
+                .iconFileName(course.getIconFileName())
+                .colorCode(course.getColorCode())
+                .orderIndex(course.getOrderIndex())
+                .sections(null)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();
