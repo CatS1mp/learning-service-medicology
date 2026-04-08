@@ -2,6 +2,7 @@ package com.medicology.learning.controller;
 
 import com.medicology.learning.dto.common.ApiResponse;
 import com.medicology.learning.dto.response.CourseProgressResponse;
+import com.medicology.learning.dto.response.LessonActivitySummaryResponse;
 import com.medicology.learning.entity.UserDailyStreak;
 import com.medicology.learning.service.ProgressService;
 import com.medicology.learning.wrapper.UserPrincipal;
@@ -27,6 +28,13 @@ public class ProgressController {
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<List<CourseProgressResponse>>> getProgressByUserId(@PathVariable UUID userId) {
         return ResponseEntity.ok(ApiResponse.success(progressService.getUserProgress(userId)));
+    }
+
+    @GetMapping("/activity")
+    public ResponseEntity<ApiResponse<LessonActivitySummaryResponse>> getLessonActivity(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(defaultValue = "7") int days) {
+        return ResponseEntity.ok(ApiResponse.success(progressService.getLessonActivity(user.getId(), days)));
     }
 
     @PostMapping("/streak/ping")

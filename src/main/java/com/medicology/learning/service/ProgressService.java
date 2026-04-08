@@ -1,6 +1,8 @@
 package com.medicology.learning.service;
 
 import com.medicology.learning.dto.response.CourseProgressResponse;
+import com.medicology.learning.dto.response.LessonActivityResponse;
+import com.medicology.learning.dto.response.LessonActivitySummaryResponse;
 import com.medicology.learning.entity.Course;
 import com.medicology.learning.entity.UserDailyStreak;
 import com.medicology.learning.entity.UserLesson;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +40,37 @@ public class ProgressService {
                 .sorted(Comparator.comparing(CourseProgressResponse::getLastStudiedAt,
                         Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
+    }
+
+    public LessonActivitySummaryResponse getLessonActivity(UUID userId, int days) {
+        int normalizedDays = Math.max(1, days);
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today.minusDays(normalizedDays - 1L);
+
+        Map<LocalDate, Long> completedLessonsByDate = userLessonRepository.findByUserId(userId).stream()
+                .map(UserLesson::getCompletedAt)
+                .filter(completedAt -> completedAt != null)
+                .map(LocalDateTime::toLocalDate)
+                .filter(date -> !date.isBefore(startDate) && !date.isAfter(today))
+                .collect(Collectors.groupingBy(date -> date, Collectors.counting()));
+
+        List<LessonActivityResponse> activity = new ArrayList<>();
+        for (int offset = 0; offset < normalizedDays; offset++) {
+            LocalDate currentDate = startDate.plusDays(offset);
+            activity.add(LessonActivityResponse.builder()
+                    .date(currentDate)
+                    .completedLessons(completedLessonsByDate.getOrDefault(currentDate, 0L).intValue())
+                    .build());
+        }
+
+        int totalCompletedLessons = activity.stream()
+                .mapToInt(LessonActivityResponse::getCompletedLessons)
+                .sum();
+
+        return LessonActivitySummaryResponse.builder()
+                .totalCompletedLessons(totalCompletedLessons)
+                .activities(activity)
+                .build();
     }
 
     public UserDailyStreak updateStreak(UUID userId) {
