@@ -11,8 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -80,6 +82,19 @@ public class CourseService {
         return userCourseRepository.findByUserIdAndStatusOrderByEnrolledAtDesc(userId, UserCourseStatus.ENROLLED)
                 .stream()
                 .map(UserCourse::getCourse)
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<CourseResponse> getAvailableCoursesForStudent(UUID userId) {
+        Set<UUID> enrolledCourseIds = new HashSet<>(userCourseRepository
+                .findByUserIdAndStatusOrderByEnrolledAtDesc(userId, UserCourseStatus.ENROLLED)
+                .stream()
+                .map(UserCourse::getCourseId)
+                .collect(Collectors.toSet()));
+
+        return courseRepository.findAll().stream()
+                .filter(course -> !enrolledCourseIds.contains(course.getId()))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

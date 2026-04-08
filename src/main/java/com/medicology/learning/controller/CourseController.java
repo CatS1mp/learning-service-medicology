@@ -32,6 +32,12 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success(courseService.getEnrolledCourses(user.getId())));
     }
 
+    @GetMapping("/student/available")
+    public ResponseEntity<ApiResponse<List<CourseResponse>>> getAvailableCoursesForStudent(
+            @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(ApiResponse.success(courseService.getAvailableCoursesForStudent(user.getId())));
+    }
+
     @GetMapping("/{courseId}")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourseDetail(@PathVariable UUID courseId) {
         return ResponseEntity.ok(ApiResponse.success(courseService.getCourseById(courseId)));
