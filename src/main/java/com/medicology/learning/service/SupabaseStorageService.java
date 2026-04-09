@@ -20,6 +20,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -30,6 +32,8 @@ import java.util.UUID;
 public class SupabaseStorageService {
 
     private static final String COURSE_ICON_PREFIX = "course-icons/";
+    private static final int REQUIRED_ICON_RATIO_WIDTH = 4;
+    private static final int REQUIRED_ICON_RATIO_HEIGHT = 3;
     private static final Logger log = LoggerFactory.getLogger(SupabaseStorageService.class);
 
     private final RestTemplate restTemplate;
@@ -99,6 +103,20 @@ public class SupabaseStorageService {
     private void validateFile(MultipartFile iconFile) {
         if (iconFile == null || iconFile.isEmpty()) {
             throw new InvalidFileException("Course icon file is required");
+        }
+
+        try {
+            BufferedImage image = ImageIO.read(iconFile.getInputStream());
+            if (image == null) {
+                throw new InvalidFileException("Course icon must be a valid image file");
+            }
+
+            if (image.getWidth() * REQUIRED_ICON_RATIO_HEIGHT != image.getHeight() * REQUIRED_ICON_RATIO_WIDTH) {
+                throw new InvalidFileException(
+                        "Course icon must use a 4:3 aspect ratio, for example 256x192 pixels");
+            }
+        } catch (IOException ex) {
+            throw new InvalidFileException("Unable to read course icon file");
         }
     }
 

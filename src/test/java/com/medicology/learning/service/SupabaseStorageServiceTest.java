@@ -13,6 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.client.RestTemplate;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,12 +45,12 @@ class SupabaseStorageServiceTest {
     }
 
     @Test
-    void uploadCourseIconUsesConfiguredBucketAndReturnsPublicUrl() {
+    void uploadCourseIconUsesConfiguredBucketAndReturnsPublicUrl() throws IOException {
         MockMultipartFile iconFile = new MockMultipartFile(
                 "iconFile",
                 "heart icon.png",
                 "image/png",
-                "png-data".getBytes());
+                createPngBytes(400, 300));
 
         when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(ResponseEntity.ok("uploaded"));
@@ -75,5 +80,27 @@ class SupabaseStorageServiceTest {
                 .hasMessage("Course icon file is required");
 
         verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class));
+    }
+
+    @Test
+    void uploadCourseIconRejectsImageWithUnexpectedDimensions() throws IOException {
+        MockMultipartFile iconFile = new MockMultipartFile(
+                "iconFile",
+                "heart.png",
+                "image/png",
+                createPngBytes(200, 200));
+
+        assertThatThrownBy(() -> supabaseStorageService.uploadCourseIcon(iconFile))
+                .isInstanceOf(InvalidFileException.class)
+                .hasMessage("Course icon must use a 4:3 aspect ratio, for example 256x192 pixels");
+
+        verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class));
+    }
+
+    private byte[] createPngBytes(int width, int height) throws IOException {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", outputStream);
+        return outputStream.toByteArray();
     }
 }

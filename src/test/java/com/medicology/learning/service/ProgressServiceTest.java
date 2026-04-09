@@ -37,7 +37,7 @@ class ProgressServiceTest {
     private ProgressService progressService;
 
     @Test
-    void getUserProgressReturnsOnlyIncompleteCoursesSortedByLatestStudyDate() {
+    void getUserProgressReturnsAllCoursesWithProgressSortedByLatestStudyDate() {
         UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111001");
         UUID courseOneId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1");
         UUID courseTwoId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2");
@@ -60,11 +60,13 @@ class ProgressServiceTest {
 
         List<CourseProgressResponse> result = progressService.getUserProgress(userId);
 
-        assertThat(result).hasSize(1);
+        assertThat(result).hasSize(2);
         assertThat(result.get(0).getCourseId()).isEqualTo(courseOneId);
         assertThat(result.get(0).getCourseName()).isEqualTo("Tim mach co ban");
         assertThat(result.get(0).getLastStudiedAt()).isEqualTo(LocalDateTime.of(2026, 4, 7, 21, 0));
         assertThat(result.get(0).getCompletionPercent()).isEqualTo(50);
+        assertThat(result.get(1).getCourseId()).isEqualTo(courseTwoId);
+        assertThat(result.get(1).getCompletionPercent()).isEqualTo(100);
     }
 
     private UserLesson buildUserLesson(UUID userId, UUID lessonId, Course course, LocalDateTime completedAt) {

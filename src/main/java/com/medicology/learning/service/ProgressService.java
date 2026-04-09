@@ -36,7 +36,6 @@ public class ProgressService {
 
         return progressByCourseId.values().stream()
                 .map(this::mapToCourseProgress)
-                .filter(courseProgress -> courseProgress.getCompletionPercent() < 100)
                 .sorted(Comparator.comparing(CourseProgressResponse::getLastStudiedAt,
                         Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());

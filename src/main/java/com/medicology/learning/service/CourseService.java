@@ -6,6 +6,8 @@ import com.medicology.learning.entity.Course;
 import com.medicology.learning.entity.UserCourse;
 import com.medicology.learning.entity.UserCourseStatus;
 import com.medicology.learning.repository.CourseRepository;
+import com.medicology.learning.repository.LessonRepository;
+import com.medicology.learning.repository.SectionRepository;
 import com.medicology.learning.repository.UserCourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ import java.util.stream.Collectors;
 public class CourseService {
     private final CourseRepository courseRepository;
     private final UserCourseRepository userCourseRepository;
+    private final SectionRepository sectionRepository;
+    private final LessonRepository lessonRepository;
     private final SectionService sectionService;
     private final SupabaseStorageService supabaseStorageService;
 
@@ -120,7 +124,7 @@ public class CourseService {
     }
 
     private CourseResponse mapToResponse(Course course) {
-        return CourseResponse.builder()
+        var builder = CourseResponse.builder()
                 .id(course.getId())
                 .name(course.getName())
                 .slug(course.getSlug())
@@ -131,12 +135,13 @@ public class CourseService {
                         .map(sectionService::mapToSummaryResponse)
                         .collect(Collectors.toList()) : null)
                 .createdAt(course.getCreatedAt())
-                .updatedAt(course.getUpdatedAt())
-                .build();
+                .updatedAt(course.getUpdatedAt());
+        applySectionLessonCounts(builder, course.getId());
+        return builder.build();
     }
 
     private CourseResponse mapToListResponse(Course course) {
-        return CourseResponse.builder()
+        var builder = CourseResponse.builder()
                 .id(course.getId())
                 .name(course.getName())
                 .slug(course.getSlug())
@@ -145,7 +150,14 @@ public class CourseService {
                 .colorCode(course.getColorCode())
                 .sections(null)
                 .createdAt(course.getCreatedAt())
-                .updatedAt(course.getUpdatedAt())
-                .build();
+                .updatedAt(course.getUpdatedAt());
+        applySectionLessonCounts(builder, course.getId());
+        return builder.build();
+    }
+
+    private void applySectionLessonCounts(CourseResponse.CourseResponseBuilder builder, UUID courseId) {
+        int sections = (int) sectionRepository.countByCourseId(courseId);
+        int lessons = (int) lessonRepository.countByCourseId(courseId);
+        builder.sectionCount(sections).lessonCount(lessons);
     }
 }
