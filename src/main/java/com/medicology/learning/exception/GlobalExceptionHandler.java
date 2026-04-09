@@ -62,6 +62,42 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidFileException(InvalidFileException ex, HttpServletRequest request) {
+        log.warn(
+                "Invalid file at [{} {}] - message: {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage(),
+                ex
+        );
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(StorageUploadException.class)
+    public ResponseEntity<ErrorResponse> handleStorageUploadException(StorageUploadException ex, HttpServletRequest request) {
+        log.error(
+                "Storage upload failed at [{} {}] - message: {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                ex.getMessage(),
+                ex
+        );
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_GATEWAY.value(),
+                "Khong the tai anh len storage. Vui long thu lai sau.",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_GATEWAY);
+    }
+
     // 3. Xử lý tất cả các lỗi lạ khác (Tránh hiện Trace dài dòng)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {

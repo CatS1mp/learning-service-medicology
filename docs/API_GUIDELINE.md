@@ -197,21 +197,31 @@ Màn hình sử dụng:
 
 Input body:
 
-```json
-{
-  "name": "Tim mạch cơ bản",
-  "slug": "tim-mach-co-ban",
-  "description": "Khóa học nhập môn tim mạch",
-  "iconFileName": "heart.png",
-  "colorCode": "#EF4444",
-  "orderIndex": 1
-}
+- `Content-Type: multipart/form-data`
+- Các field form-data:
+  - `name`: `Tim mach co ban`
+  - `slug`: `tim-mach-co-ban`
+  - `description`: `Khoa hoc nhap mon tim mach`
+  - `colorCode`: `#EF4444`
+  - `orderIndex`: `1`
+  - `iconFile`: file anh nguoi dung chon (`png/jpg/...`)
+
+Vi du request:
+
+```text
+name=Tim mach co ban
+slug=tim-mach-co-ban
+description=Khoa hoc nhap mon tim mach
+colorCode=#EF4444
+orderIndex=1
+iconFile=<heart.png>
 ```
 
 Output:
 
 - `201 Created`
 - `CourseResponse`
+- `iconFileName` trong response la public URL cua anh tren Supabase Storage, khong con la ten file thuần.
 
 ### 4.5 PUT `/api/v1/learning/courses/{courseId}`
 

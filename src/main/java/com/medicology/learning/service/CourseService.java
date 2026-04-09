@@ -9,6 +9,7 @@ import com.medicology.learning.repository.CourseRepository;
 import com.medicology.learning.repository.UserCourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final UserCourseRepository userCourseRepository;
     private final SectionService sectionService;
+    private final SupabaseStorageService supabaseStorageService;
 
     public List<CourseResponse> getAllCourses() {
         return courseRepository.findAll().stream()
@@ -41,12 +43,14 @@ public class CourseService {
         return getCourseById(courseId);
     }
 
-    public CourseResponse createCourse(CourseRequest request) {
+    public CourseResponse createCourse(CourseRequest request, MultipartFile iconFile) {
+        String iconUrl = supabaseStorageService.uploadCourseIcon(iconFile);
+
         Course course = Course.builder()
                 .name(request.getName())
                 .slug(request.getSlug())
                 .description(request.getDescription())
-                .iconFileName(request.getIconFileName())
+                .iconFileName(iconUrl)
                 .colorCode(request.getColorCode())
                 .orderIndex(request.getOrderIndex())
                 .build();

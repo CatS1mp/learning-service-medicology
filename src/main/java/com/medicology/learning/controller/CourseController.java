@@ -7,9 +7,11 @@ import com.medicology.learning.service.CourseService;
 import com.medicology.learning.wrapper.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -65,11 +67,13 @@ public class CourseController {
                         null));
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<CourseResponse>> createCourse(@RequestBody CourseRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
+            @ModelAttribute CourseRequest request,
+            @RequestParam("iconFile") MultipartFile iconFile) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(HttpStatus.CREATED.value(), "Course created successfully",
-                        courseService.createCourse(request)));
+                        courseService.createCourse(request, iconFile)));
     }
 
     @PutMapping("/{courseId}")

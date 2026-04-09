@@ -1,0 +1,79 @@
+package com.medicology.learning.service;
+
+import com.medicology.learning.exception.InvalidFileException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.client.RestTemplate;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class SupabaseStorageServiceTest {
+
+    @Mock
+    private RestTemplate restTemplate;
+
+    private SupabaseStorageService supabaseStorageService;
+
+    @BeforeEach
+    void setUp() {
+        supabaseStorageService = new SupabaseStorageService(
+                restTemplate,
+                "https://project.supabase.co/",
+                "Course Image",
+                "test-secret-key");
+    }
+
+    @Test
+    void uploadCourseIconUsesConfiguredBucketAndReturnsPublicUrl() {
+        MockMultipartFile iconFile = new MockMultipartFile(
+                "iconFile",
+                "heart icon.png",
+                "image/png",
+                "png-data".getBytes());
+
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(ResponseEntity.ok("uploaded"));
+
+        String publicUrl = supabaseStorageService.uploadCourseIcon(iconFile);
+
+        ArgumentCaptor<String> uploadUrlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(restTemplate).exchange(uploadUrlCaptor.capture(), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class));
+
+        assertThat(uploadUrlCaptor.getValue())
+                .startsWith("https://project.supabase.co/storage/v1/object/Course%20Image/course-icons/");
+        assertThat(publicUrl)
+                .startsWith("https://project.supabase.co/storage/v1/object/public/Course%20Image/course-icons/");
+        assertThat(publicUrl).endsWith("-heart-icon.png");
+    }
+
+    @Test
+    void uploadCourseIconRejectsMissingFile() {
+        MockMultipartFile iconFile = new MockMultipartFile(
+                "iconFile",
+                "heart.png",
+                "image/png",
+                new byte[0]);
+
+        assertThatThrownBy(() -> supabaseStorageService.uploadCourseIcon(iconFile))
+                .isInstanceOf(InvalidFileException.class)
+                .hasMessage("Course icon file is required");
+
+        verify(restTemplate, never()).exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class));
+    }
+}
