@@ -52,7 +52,6 @@ public class CourseService {
                 .description(request.getDescription())
                 .iconFileName(iconUrl)
                 .colorCode(request.getColorCode())
-                .orderIndex(request.getOrderIndex())
                 .build();
         return mapToResponse(courseRepository.save(course));
     }
@@ -65,7 +64,6 @@ public class CourseService {
         course.setDescription(request.getDescription());
         course.setIconFileName(request.getIconFileName());
         course.setColorCode(request.getColorCode());
-        course.setOrderIndex(request.getOrderIndex());
         return mapToResponse(courseRepository.save(course));
     }
 
@@ -129,7 +127,6 @@ public class CourseService {
                 .description(course.getDescription())
                 .iconFileName(course.getIconFileName())
                 .colorCode(course.getColorCode())
-                .orderIndex(course.getOrderIndex())
                 .sections(course.getSections() != null ? course.getSections().stream()
                         .map(sectionService::mapToSummaryResponse)
                         .collect(Collectors.toList()) : null)
@@ -146,7 +143,6 @@ public class CourseService {
                 .description(course.getDescription())
                 .iconFileName(course.getIconFileName())
                 .colorCode(course.getColorCode())
-                .orderIndex(course.getOrderIndex())
                 .sections(null)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())

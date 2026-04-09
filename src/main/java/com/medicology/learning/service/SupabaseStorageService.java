@@ -2,6 +2,9 @@ package com.medicology.learning.service;
 
 import com.medicology.learning.exception.InvalidFileException;
 import com.medicology.learning.exception.StorageUploadException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -11,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +22,7 @@ import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,12 +30,14 @@ import java.util.UUID;
 public class SupabaseStorageService {
 
     private static final String COURSE_ICON_PREFIX = "course-icons/";
+    private static final Logger log = LoggerFactory.getLogger(SupabaseStorageService.class);
 
     private final RestTemplate restTemplate;
     private final String supabaseUrl;
     private final String storageBucket;
     private final String serviceRoleKey;
 
+    @Autowired
     public SupabaseStorageService(
             RestTemplateBuilder restTemplateBuilder,
             @Value("${supabase.url}") String supabaseUrl,
@@ -46,7 +53,7 @@ public class SupabaseStorageService {
             String serviceRoleKey) {
         this.restTemplate = restTemplate;
         this.supabaseUrl = supabaseUrl.endsWith("/") ? supabaseUrl.substring(0, supabaseUrl.length() - 1) : supabaseUrl;
-        this.storageBucket = storageBucket;
+        this.storageBucket = normalizeBucketName(storageBucket);
         this.serviceRoleKey = serviceRoleKey;
     }
 
@@ -73,8 +80,15 @@ public class SupabaseStorageService {
             }
 
             return buildPublicUrl(objectPath);
+        } catch (HttpStatusCodeException ex) {
+            throw new StorageUploadException(
+                    "Failed to upload course icon to Supabase bucket '" + storageBucket
+                            + "': " + ex.getResponseBodyAsString(),
+                    ex);
         } catch (IOException | RestClientException ex) {
-            throw new StorageUploadException("Failed to upload course icon to Supabase", ex);
+            throw new StorageUploadException(
+                    "Failed to upload course icon to Supabase bucket '" + storageBucket + "'",
+                    ex);
         }
     }
 
@@ -94,6 +108,31 @@ public class SupabaseStorageService {
 
     private String encodeBucketAndPath(String objectPath) {
         return UriUtils.encodePath(storageBucket + "/" + objectPath, StandardCharsets.UTF_8);
+    }
+
+    private String normalizeBucketName(String configuredBucket) {
+        String trimmedBucket = Optional.ofNullable(configuredBucket)
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .orElseThrow(() -> new IllegalArgumentException("supabase.storage.bucket must not be blank"));
+
+        String normalizedBucket = trimmedBucket
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", "-");
+
+        if (!normalizedBucket.matches("^[a-z0-9][a-z0-9._-]*$")) {
+            throw new IllegalArgumentException(
+                    "supabase.storage.bucket must be a Supabase bucket ID, for example 'course-image'");
+        }
+
+        if (!trimmedBucket.equals(normalizedBucket)) {
+            log.warn(
+                    "Normalized Supabase bucket name from '{}' to '{}'. Configure the bucket ID directly to avoid upload issues.",
+                    trimmedBucket,
+                    normalizedBucket);
+        }
+
+        return normalizedBucket;
     }
 
     private String buildObjectPath(String originalFilename) {

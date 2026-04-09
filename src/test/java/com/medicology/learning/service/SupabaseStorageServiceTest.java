@@ -56,9 +56,9 @@ class SupabaseStorageServiceTest {
         verify(restTemplate).exchange(uploadUrlCaptor.capture(), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class));
 
         assertThat(uploadUrlCaptor.getValue())
-                .startsWith("https://project.supabase.co/storage/v1/object/Course%20Image/course-icons/");
+                .startsWith("https://project.supabase.co/storage/v1/object/course-image/course-icons/");
         assertThat(publicUrl)
-                .startsWith("https://project.supabase.co/storage/v1/object/public/Course%20Image/course-icons/");
+                .startsWith("https://project.supabase.co/storage/v1/object/public/course-image/course-icons/");
         assertThat(publicUrl).endsWith("-heart-icon.png");
     }
 

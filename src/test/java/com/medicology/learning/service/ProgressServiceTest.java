@@ -105,7 +105,6 @@ class ProgressServiceTest {
                 .name(name)
                 .slug(slug)
                 .description("Description")
-                .orderIndex(1)
                 .build();
     }
 }

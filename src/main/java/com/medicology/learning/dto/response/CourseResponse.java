@@ -15,7 +15,6 @@ public class CourseResponse {
     private String description;
     private String iconFileName;
     private String colorCode;
-    private Integer orderIndex;
     private List<SectionSummaryResponse> sections;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

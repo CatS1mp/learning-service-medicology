@@ -34,9 +34,6 @@ public class Course {
     @Column(name = "color_code", length = 20)
     private String colorCode;
 
-    @Column(name = "order_index", nullable = false)
-    private Integer orderIndex;
-
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("orderIndex ASC")
     private List<Section> sections;

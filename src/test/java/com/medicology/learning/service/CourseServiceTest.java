@@ -48,7 +48,6 @@ class CourseServiceTest {
         request.setSlug("tim-mach-co-ban");
         request.setDescription("Khoa hoc nhap mon tim mach");
         request.setColorCode("#EF4444");
-        request.setOrderIndex(1);
 
         MockMultipartFile iconFile = new MockMultipartFile(
                 "iconFile",
@@ -81,7 +80,6 @@ class CourseServiceTest {
         request.setSlug("tim-mach-co-ban");
         request.setDescription("Khoa hoc nhap mon tim mach");
         request.setColorCode("#EF4444");
-        request.setOrderIndex(1);
 
         MockMultipartFile iconFile = new MockMultipartFile(
                 "iconFile",
