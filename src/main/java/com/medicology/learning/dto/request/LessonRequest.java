@@ -2,6 +2,7 @@ package com.medicology.learning.dto.request;
 
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -15,4 +16,5 @@ public class LessonRequest {
     private String difficultyLevel;
     private Boolean isActive;
     private String content;
+    private List<LessonContentBlockRequest> blocks;
 }
