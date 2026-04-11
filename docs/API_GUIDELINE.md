@@ -437,7 +437,17 @@ Ví dụ response:
   "estimatedDurationMinutes": 10,
   "difficultyLevel": "beginner",
   "isActive": true,
-  "content": "{\"blocks\":[]}",
+  "content": "Nội dung legacy dạng text",
+  "blocks": [
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "orderIndex": 1,
+      "kind": "RICH_TEXT",
+      "payload": "{\"title\":\"Đại cương\",\"body\":\"Nội dung\"}",
+      "assessmentId": null,
+      "questionId": null
+    }
+  ],
   "createdAt": "2026-04-07T10:00:00",
   "updatedAt": "2026-04-07T10:00:00"
 }
@@ -465,7 +475,16 @@ Input body:
   "estimatedDurationMinutes": 10,
   "difficultyLevel": "beginner",
   "isActive": true,
-  "content": "{\"blocks\":[]}"
+  "content": "Nội dung legacy dạng text",
+  "blocks": [
+    {
+      "orderIndex": 1,
+      "kind": "RICH_TEXT",
+      "payload": "{\"title\":\"Đại cương\",\"body\":\"Nội dung\"}",
+      "assessmentId": null,
+      "questionId": null
+    }
+  ]
 }
 ```
 
@@ -495,7 +514,16 @@ Input body:
   "estimatedDurationMinutes": 10,
   "difficultyLevel": "beginner",
   "isActive": true,
-  "content": "{\"blocks\":[]}"
+  "content": "Nội dung legacy dạng text",
+  "blocks": [
+    {
+      "orderIndex": 1,
+      "kind": "RICH_TEXT",
+      "payload": "{\"title\":\"Đại cương\",\"body\":\"Nội dung\"}",
+      "assessmentId": null,
+      "questionId": null
+    }
+  ]
 }
 ```
 
@@ -586,6 +614,38 @@ Lưu ý quan trọng:
 
 - Path đang dùng tên `courses/{lessonId}/enroll`, dễ gây nhầm lẫn vì param thực chất là `lessonId`.
 - Nên xem đây là route legacy/không khuyến khích dùng cho FE mới.
+
+### 6.10 PATCH `/api/v1/learning/lessons/{lessonId}/blocks/{blockId}/progress`
+
+Mục đích:
+
+- Cập nhật trạng thái học theo từng content block cho user hiện tại.
+
+Input body:
+
+```json
+{
+  "status": "COMPLETED",
+  "score": 8,
+  "maxScore": 10
+}
+```
+
+Output:
+
+- `200 OK`
+- `LessonBlockProgressResponse`
+
+### 6.11 GET `/api/v1/learning/lessons/{lessonId}/blocks/progress`
+
+Mục đích:
+
+- Lấy danh sách tiến độ block của lesson theo user hiện tại.
+
+Output:
+
+- `200 OK`
+- `List<LessonBlockProgressResponse>`
 
 ## 7. Progress APIs
 

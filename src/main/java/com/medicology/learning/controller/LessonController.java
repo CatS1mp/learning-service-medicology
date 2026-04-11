@@ -1,8 +1,10 @@
 package com.medicology.learning.controller;
 
 import com.medicology.learning.dto.common.ApiResponse;
+import com.medicology.learning.dto.request.LessonBlockProgressRequest;
 import com.medicology.learning.dto.request.LessonRequest;
 import com.medicology.learning.dto.request.LessonStatusRequest;
+import com.medicology.learning.dto.response.LessonBlockProgressResponse;
 import com.medicology.learning.dto.response.LessonResponse;
 import com.medicology.learning.dto.response.LessonSummaryResponse;
 import com.medicology.learning.service.LessonService;
@@ -80,5 +82,27 @@ public class LessonController {
                 HttpStatus.OK.value(),
                 "Lesson status updated successfully",
                 lessonService.updateLessonStatus(lessonId, request)));
+    }
+
+    @PatchMapping("/lessons/{lessonId}/blocks/{blockId}/progress")
+    public ResponseEntity<ApiResponse<LessonBlockProgressResponse>> updateBlockProgress(
+            @PathVariable UUID lessonId,
+            @PathVariable UUID blockId,
+            @RequestBody LessonBlockProgressRequest request,
+            @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(ApiResponse.success(
+                HttpStatus.OK.value(),
+                "Lesson block progress updated successfully",
+                lessonService.updateBlockProgress(lessonId, blockId, user.getId(), request)));
+    }
+
+    @GetMapping("/lessons/{lessonId}/blocks/progress")
+    public ResponseEntity<ApiResponse<List<LessonBlockProgressResponse>>> getBlockProgress(
+            @PathVariable UUID lessonId,
+            @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(ApiResponse.success(
+                HttpStatus.OK.value(),
+                "Lesson block progress fetched successfully",
+                lessonService.getBlockProgress(lessonId, user.getId())));
     }
 }
