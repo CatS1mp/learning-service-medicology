@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface AiLearningFeedbackRepository extends JpaRepository<AiLearningFeedback, UUID> {
-    List<AiLearningFeedback> findByUserId(UUID userId);
+    List<AiLearningFeedback> findByUserIdOrderByCreatedAtDesc(UUID userId);
 }
