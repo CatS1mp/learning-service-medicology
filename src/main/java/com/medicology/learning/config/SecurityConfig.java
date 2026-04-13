@@ -3,6 +3,7 @@ package com.medicology.learning.config;
 import org.springframework.context.annotation.Bean;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,13 +23,18 @@ import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 
 public class SecurityConfig {
         private final JwtAuthenticationFilter jwtAuthFilter; // Filter bạn đã viết
+
+        @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8081}")
+        private String corsAllowedOrigins;
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -50,6 +56,7 @@ public class SecurityConfig {
                                 // đầu
                                 // không)
                                 .requestMatchers("/api/v1/auth/**").permitAll()
+                                .requestMatchers("/api/v1/learning/internal/**").permitAll()
 
                                 // 3. Các request khác mới cần login
                                 .anyRequest().authenticated())
@@ -91,11 +98,10 @@ public class SecurityConfig {
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
                 
-                // 1. Cho phép các nguồn gửi yêu cầu
-                configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                        "http://localhost:8081"
-                ));
+                configuration.setAllowedOrigins(Arrays.stream(corsAllowedOrigins.split(","))
+                                .map(String::trim)
+                                .filter(s -> !s.isEmpty())
+                                .toList());
                 
                 // 2. Cho phép các phương thức HTTPS
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));

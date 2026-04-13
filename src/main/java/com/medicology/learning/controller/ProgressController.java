@@ -11,8 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.UUID;
+
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @RestController
 @RequestMapping("/api/v1/learning/progress")
@@ -26,7 +29,12 @@ public class ProgressController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<List<CourseProgressResponse>>> getProgressByUserId(@PathVariable UUID userId) {
+    public ResponseEntity<ApiResponse<List<CourseProgressResponse>>> getProgressByUserId(
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal UserPrincipal user) {
+        if (!user.getId().equals(userId) && !user.isAdmin()) {
+            throw new ResponseStatusException(FORBIDDEN, "Cannot view another user's progress");
+        }
         return ResponseEntity.ok(ApiResponse.success(progressService.getUserProgress(userId)));
     }
 

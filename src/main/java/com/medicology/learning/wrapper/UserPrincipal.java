@@ -8,10 +8,15 @@ import lombok.Getter;
 public class UserPrincipal {
     private final UUID id;
     private final String email;
-    // Không cần password, không cần isAdmin nếu không dùng tới
+    private final boolean admin;
 
     public UserPrincipal(UUID id, String email) {
+        this(id, email, false);
+    }
+
+    public UserPrincipal(UUID id, String email, boolean admin) {
         this.id = id;
         this.email = email;
+        this.admin = admin;
     }
 }
