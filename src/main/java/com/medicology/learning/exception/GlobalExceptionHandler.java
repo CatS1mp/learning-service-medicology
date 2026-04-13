@@ -34,11 +34,11 @@ public class GlobalExceptionHandler {
     );
 
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(), 
-                ex.getMessage(), 
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
                 LocalDateTime.now()
         );
-        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     // 2. Xử lý lỗi Validation (Cái lỗi "Email không hợp lệ" lúc đầu)
