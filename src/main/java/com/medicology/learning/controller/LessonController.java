@@ -34,8 +34,8 @@ public class LessonController {
             @AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
-                "Lesson enrollment fetched successfully",
-                lessonService.getLessonDetail(lessonId)));
+                "Lesson enrollment recorded successfully",
+                lessonService.enrollLesson(lessonId, user.getId())));
     }
 
     @PostMapping("/lessons/{lessonId}/complete")

@@ -22,6 +22,7 @@ import com.medicology.learning.repository.UserLessonBlockProgressRepository;
 import com.medicology.learning.repository.UserLessonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -49,6 +50,20 @@ public class LessonService {
         return lessonRepository.findById(lessonId)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new IllegalArgumentException("Lesson not found with ID: " + lessonId));
+    }
+
+    @Transactional
+    public LessonResponse enrollLesson(UUID lessonId, UUID userId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new IllegalArgumentException("Lesson not found with ID: " + lessonId));
+        userLessonRepository.findByUserIdAndLessonId(userId, lessonId)
+                .orElseGet(() -> userLessonRepository.save(UserLesson.builder()
+                        .userId(userId)
+                        .lessonId(lessonId)
+                        .lesson(lesson)
+                        .quizzesCorrect(0)
+                        .build()));
+        return mapToResponse(lesson);
     }
 
     public void completeLesson(UUID lessonId, UUID userId) {
