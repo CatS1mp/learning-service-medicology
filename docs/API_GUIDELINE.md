@@ -2,7 +2,7 @@
 
 ## 1. Mục đích tài liệu
 
-Tài liệu này mô tả toàn bộ endpoint hiện có trong `learning-service-medicology`, gồm:
+Tài liệu này mô tả endpoint trong `learning-service-medicology`, gồm:
 
 - Công dụng của endpoint
 - Input request
@@ -10,22 +10,26 @@ Tài liệu này mô tả toàn bộ endpoint hiện có trong `learning-service
 - Màn hình hoặc flow nên sử dụng
 - Lưu ý triển khai FE/BE
 
-Base URL:
+## 2. Base URL và tài liệu kỹ thuật
 
 - Local: `http://localhost:8081`
+- Staging: `Chưa cấu hình riêng trong repo`
 - Production: `https://learning-service-medicology-eae21d20151f.herokuapp.com`
 
-Swagger:
+Swagger / OpenAPI:
 
 - `GET /swagger-ui.html`
 - `GET /api-docs`
+- `GET /` redirect sang `/swagger-ui/index.html`
 
-## 2. Authentication và quy ước chung
+## 3. Authentication và quy ước chung
 
-### 2.1 Authentication
+### 3.1 Authentication
 
-- Tất cả endpoint dưới `/api/v1/learning/**` hiện tại đều yêu cầu JWT Bearer token.
-- Chỉ các route Swagger và `/api/v1/auth/**` được mở public.
+- Public: `/`, Swagger
+- Internal route không yêu cầu JWT ở security layer: `/api/v1/learning/internal/**`
+- Toàn bộ endpoint business còn lại dưới `/api/v1/learning/**` yêu cầu JWT Bearer
+- Lưu ý: các endpoint create/update/delete course, section, lesson và AI feedback hiện chưa gắn `ROLE_ADMIN` ở controller/security; về thực tế chỉ cần một JWT hợp lệ để gọi
 
 Header chuẩn:
 
@@ -34,892 +38,224 @@ Authorization: Bearer <jwt-token>
 Content-Type: application/json
 ```
 
-### 2.2 Kiểu lỗi hiện tại
+Header cho contract nội bộ:
 
-Error response hiện tại:
+```http
+X-Internal-Token: <shared-secret>
+```
+
+### 3.2 Kiểu lỗi
+
+Format lỗi hiện tại:
 
 ```json
 {
-  "status": 500,
-  "message": "Hệ thống gặp sự cố bất ngờ. Vui lòng thử lại sau!",
-  "timestamp": "2026-04-07T20:42:39.6455854"
+  "status": 400,
+  "message": "Mô tả lỗi",
+  "timestamp": "2026-04-13T10:30:00"
 }
 ```
 
-Lưu ý:
+Mapping chính:
 
-- `IllegalArgumentException` đang được map thành HTTP `401 Unauthorized`, kể cả khi lỗi thực chất là không tìm thấy dữ liệu.
-- Các endpoint hiện chưa thống nhất `ApiResponse<T>`, đa số trả thẳng object hoặc list.
+- `IllegalArgumentException`, validation, `InvalidRequestException`, `InvalidFileException` trả `400`
+- `DataIntegrityViolationException` có thể trả `409 Conflict` cho lỗi trùng dữ liệu như slug
+- `StorageUploadException` trả `502 Bad Gateway`
+- Lỗi chưa bắt riêng trả `500 Internal Server Error`
 
-### 2.3 Quy ước response hiện tại
+### 3.3 Quy ước response
 
-- `CourseResponse` trả course và có thể kèm `sections`
-- `SectionResponse` trả section và có thể kèm `lessons`
-- `LessonResponse` trả đầy đủ nội dung bài học
-- `UserLessonProgressResponse` là DTO rút gọn cho màn hình progress, tránh vòng lặp dữ liệu
+- Service này dùng `ApiResponse<T>` theo format:
 
-## 3. Tóm tắt mapping theo màn hình
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {}
+}
+```
+
+- Các endpoint đọc đơn giản thường trả `code=200`, `message=Success`
+- Các endpoint create/update có thể trả custom message như `"Course created successfully"`
+- Một số endpoint admin-like chưa tách riêng DTO role-based, nên FE cần phân quyền ở tầng khác nếu cần
+
+## 4. Tóm tắt mapping theo màn hình
 
 | Màn hình / flow | Endpoint chính |
-|---|---|
-| Trang danh sách khóa học | `GET /api/v1/learning/courses` |
-| Trang learning path | `GET /api/v1/learning/courses/path` |
-| Trang chi tiết khóa học | `GET /api/v1/learning/courses/{courseId}` |
-| Trang chi tiết section | `GET /api/v1/learning/sections/{sectionId}` |
-| Trang lesson player / lesson detail | `GET /api/v1/learning/lessons/{lessonId}` |
-| Danh sách lesson theo section | `GET /api/v1/learning/sections/{sectionId}/lessons` |
-| Màn hình tiến độ học tập của user | `GET /api/v1/learning/progress` |
-| Admin/CMS tạo sửa course | `POST/PUT/DELETE /api/v1/learning/courses...` |
-| Admin/CMS tạo sửa section | `POST/PUT/DELETE /api/v1/learning/courses/{courseId}/sections`, `/api/v1/learning/sections/{sectionId}` |
-| Admin/CMS tạo sửa lesson | `POST/PUT/DELETE /api/v1/learning/lessons...` |
-| Màn hình AI feedback sau quiz/luyện tập | `POST /api/v1/learning/ai-feedback` |
-| Admin/CMS quản lý feedback AI | `GET/PUT/DELETE /api/v1/learning/ai-feedback...` |
-| Daily streak / check-in học tập | `POST /api/v1/learning/progress/streak/ping` |
-
-## 4. Course APIs
-
-### 4.1 GET `/api/v1/learning/courses`
-
-Mục đích:
-
-- Lấy toàn bộ course để hiển thị landing page học tập hoặc course catalog.
-
-Màn hình sử dụng:
-
-- Trang danh sách khóa học
-- Trang chọn lộ trình học
-- Dashboard học tập
-
-Input:
-
-- Không có body
-- Không có query param
-
-Output:
-
-- `200 OK`
-- Kiểu trả về: `List<CourseResponse>`
-
-Ví dụ response:
-
-```json
-[
-  {
-    "id": "11111111-1111-1111-1111-111111111111",
-    "name": "Tim mạch cơ bản",
-    "slug": "tim-mach-co-ban",
-    "description": "Khóa học nhập môn tim mạch",
-    "iconFileName": "heart.png",
-    "colorCode": "#EF4444",
-    "orderIndex": 1,
-    "sections": [
-      {
-        "id": "22222222-2222-2222-2222-222222222222",
-        "courseId": "11111111-1111-1111-1111-111111111111",
-        "name": "Nhập môn tim mạch",
-        "slug": "nhap-mon-tim-mach",
-        "orderIndex": 1,
-        "estimatedDurationMinutes": 25,
-        "lessons": []
-      }
-    ],
-    "createdAt": "2026-04-07T10:00:00",
-    "updatedAt": "2026-04-07T10:00:00"
-  }
-]
-```
-
-Lưu ý:
-
-- Response có thể khá nặng vì mỗi course có lồng `sections`, và mỗi section lại có `lessons`.
-
-### 4.2 GET `/api/v1/learning/courses/{courseId}`
-
-Mục đích:
-
-- Lấy chi tiết một course.
-
-Màn hình sử dụng:
-
-- Trang chi tiết khóa học
-- Trang outline khóa học
-
-Path param:
-
-- `courseId: UUID`
-
-Output:
-
-- `200 OK`
-- `CourseResponse`
-
-Lưu ý:
-
-- Nếu không tìm thấy course, hệ thống đang trả `401` với message kiểu `Course not found with ID: ...`
-
-### 4.3 GET `/api/v1/learning/courses/path`
-
-Mục đích:
-
-- Lấy learning path tổng hợp.
-
-Màn hình sử dụng:
-
-- Màn hình lộ trình học
-- Trang home learning
-
-Output thực tế:
-
-```json
-{
-  "courses": [
-    {
-      "id": "11111111-1111-1111-1111-111111111111",
-      "name": "Tim mạch cơ bản"
-    }
-  ]
-}
-```
-
-Lưu ý:
-
-- Endpoint này hiện chỉ bọc `courses` trong một object, chưa có metadata học tập riêng.
-
-### 4.4 POST `/api/v1/learning/courses`
-
-Mục đích:
-
-- Tạo course mới.
-
-Màn hình sử dụng:
-
-- CMS/Admin tạo khóa học
-
-Input body:
-
-- `Content-Type: multipart/form-data`
-- Các field form-data:
-  - `name`: `Tim mach co ban`
-  - `slug`: `tim-mach-co-ban`
-  - `description`: `Khoa hoc nhap mon tim mach`
-  - `colorCode`: `#EF4444`
-  - `orderIndex`: `1`
-  - `iconFile`: file anh nguoi dung chon (`png/jpg/...`)
-
-Vi du request:
-
-```text
-name=Tim mach co ban
-slug=tim-mach-co-ban
-description=Khoa hoc nhap mon tim mach
-colorCode=#EF4444
-orderIndex=1
-iconFile=<heart.png>
-```
-
-Output:
-
-- `201 Created`
-- `CourseResponse`
-- `iconFileName` trong response la public URL cua anh tren Supabase Storage, khong con la ten file thuần.
-
-### 4.5 PUT `/api/v1/learning/courses/{courseId}`
-
-Mục đích:
-
-- Cập nhật course.
-
-Màn hình sử dụng:
-
-- CMS/Admin sửa khóa học
-
-Input body:
-
-- Cùng cấu trúc `CourseRequest`
-
-Output:
-
-- `200 OK`
-- `CourseResponse`
-
-### 4.6 DELETE `/api/v1/learning/courses/{courseId}`
-
-Mục đích:
-
-- Xóa course.
-
-Màn hình sử dụng:
-
-- CMS/Admin quản trị khóa học
-
-Output:
-
-- `204 No Content`
-
-## 5. Section APIs
-
-### 5.1 GET `/api/v1/learning/courses/{courseId}/sections`
-
-Mục đích:
-
-- Lấy danh sách section thuộc một course.
-
-Màn hình sử dụng:
-
-- Course detail
-- Sidebar nội dung khóa học
-
-Output:
-
-- `200 OK`
-- `List<SectionResponse>`
-
-Ví dụ response:
-
-```json
-[
-  {
-    "id": "22222222-2222-2222-2222-222222222222",
-    "courseId": "11111111-1111-1111-1111-111111111111",
-    "name": "Nhập môn tim mạch",
-    "slug": "nhap-mon-tim-mach",
-    "orderIndex": 1,
-    "estimatedDurationMinutes": 25,
-    "lessons": [
-      {
-        "id": "33333333-3333-3333-3333-333333333333",
-        "sectionId": "22222222-2222-2222-2222-222222222222",
-        "name": "Giải phẫu tim",
-        "description": "Tổng quan giải phẫu tim",
-        "slug": "giai-phau-tim",
-        "orderIndex": 1,
-        "estimatedDurationMinutes": 10,
-        "difficultyLevel": "beginner",
-        "isActive": true,
-        "content": "{\"blocks\":[]}"
-      }
-    ]
-  }
-]
-```
-
-### 5.2 POST `/api/v1/learning/courses/{courseId}/sections`
-
-Mục đích:
-
-- Tạo section mới trong một course.
-
-Màn hình sử dụng:
-
-- CMS/Admin quản lý outline khóa học
-
-Input body:
-
-```json
-{
-  "name": "Nhập môn tim mạch",
-  "slug": "nhap-mon-tim-mach",
-  "orderIndex": 1,
-  "estimatedDurationMinutes": 25
-}
-```
-
-Lưu ý:
-
-- `courseId` lấy từ path, không cần gửi trong body.
-
-Output:
-
-- `201 Created`
-- `SectionResponse`
-
-### 5.3 GET `/api/v1/learning/sections/{sectionId}`
-
-Mục đích:
-
-- Lấy chi tiết một section và các lesson của section đó.
-
-Màn hình sử dụng:
-
-- Section detail
-- Nội dung chương học
-
-Output:
-
-- `200 OK`
-- `SectionResponse`
-
-### 5.4 PUT `/api/v1/learning/sections/{sectionId}`
-
-Mục đích:
-
-- Cập nhật section.
-
-Màn hình sử dụng:
-
-- CMS/Admin sửa section
-
-Input body:
-
-```json
-{
-  "courseId": "11111111-1111-1111-1111-111111111111",
-  "name": "Nhập môn tim mạch",
-  "slug": "nhap-mon-tim-mach",
-  "orderIndex": 1,
-  "estimatedDurationMinutes": 25
-}
-```
-
-Lưu ý:
-
-- Khi update phải truyền `courseId` trong body.
-
-### 5.5 DELETE `/api/v1/learning/sections/{sectionId}`
-
-Mục đích:
-
-- Xóa section.
-
-Màn hình sử dụng:
-
-- CMS/Admin
-
-Output:
-
-- `204 No Content`
-
-## 6. Lesson APIs
-
-### 6.1 GET `/api/v1/learning/sections/{sectionId}/lessons`
-
-Mục đích:
-
-- Lấy danh sách lesson theo section.
-
-Màn hình sử dụng:
-
-- Lesson list trong section
-- Sidebar lesson
-
-Output:
-
-- `200 OK`
-- `List<LessonResponse>`
-
-### 6.2 GET `/api/v1/learning/lessons/{lessonId}`
-
-Mục đích:
-
-- Lấy chi tiết lesson.
-
-Màn hình sử dụng:
-
-- Lesson player
-- Lesson reading screen
-- Quiz preparation screen
-
-Output:
-
-- `200 OK`
-- `LessonResponse`
-
-Ví dụ response:
-
-```json
-{
-  "id": "33333333-3333-3333-3333-333333333333",
-  "sectionId": "22222222-2222-2222-2222-222222222222",
-  "name": "Giải phẫu tim",
-  "description": "Tổng quan giải phẫu tim",
-  "slug": "giai-phau-tim",
-  "orderIndex": 1,
-  "estimatedDurationMinutes": 10,
-  "difficultyLevel": "beginner",
-  "isActive": true,
-  "content": "Nội dung legacy dạng text",
-  "blocks": [
-    {
-      "id": "44444444-4444-4444-4444-444444444444",
-      "orderIndex": 1,
-      "kind": "RICH_TEXT",
-      "payload": "{\"title\":\"Đại cương\",\"body\":\"Nội dung\"}",
-      "assessmentId": null,
-      "questionId": null
-    }
-  ],
-  "createdAt": "2026-04-07T10:00:00",
-  "updatedAt": "2026-04-07T10:00:00"
-}
-```
-
-### 6.3 POST `/api/v1/learning/lessons`
-
-Mục đích:
-
-- Tạo lesson mới.
-
-Màn hình sử dụng:
-
-- CMS/Admin tạo lesson
-
-Input body:
-
-```json
-{
-  "sectionId": "22222222-2222-2222-2222-222222222222",
-  "name": "Giải phẫu tim",
-  "description": "Tổng quan giải phẫu tim",
-  "slug": "giai-phau-tim",
-  "orderIndex": 1,
-  "estimatedDurationMinutes": 10,
-  "difficultyLevel": "beginner",
-  "isActive": true,
-  "content": "Nội dung legacy dạng text",
-  "blocks": [
-    {
-      "orderIndex": 1,
-      "kind": "RICH_TEXT",
-      "payload": "{\"title\":\"Đại cương\",\"body\":\"Nội dung\"}",
-      "assessmentId": null,
-      "questionId": null
-    }
-  ]
-}
-```
-
-Output:
-
-- `201 Created`
-- `LessonResponse`
-
-### 6.4 POST `/api/v1/learning/sections/{sectionId}/lessons`
-
-Mục đích:
-
-- Tạo lesson mới bằng cách truyền `sectionId` trên URL.
-
-Màn hình sử dụng:
-
-- CMS/Admin khi đang đứng trong trang quản lý section cụ thể
-
-Input body:
-
-```json
-{
-  "name": "Giải phẫu tim",
-  "description": "Tổng quan giải phẫu tim",
-  "slug": "giai-phau-tim",
-  "orderIndex": 1,
-  "estimatedDurationMinutes": 10,
-  "difficultyLevel": "beginner",
-  "isActive": true,
-  "content": "Nội dung legacy dạng text",
-  "blocks": [
-    {
-      "orderIndex": 1,
-      "kind": "RICH_TEXT",
-      "payload": "{\"title\":\"Đại cương\",\"body\":\"Nội dung\"}",
-      "assessmentId": null,
-      "questionId": null
-    }
-  ]
-}
-```
-
-Lưu ý:
-
-- Nếu body có `sectionId`, controller sẽ override bằng path param.
-
-### 6.5 PUT `/api/v1/learning/lessons/{lessonId}`
-
-Mục đích:
-
-- Cập nhật lesson.
-
-Màn hình sử dụng:
-
-- CMS/Admin sửa lesson
-
-Input body:
-
-- Cùng cấu trúc `LessonRequest`
-
-### 6.6 PATCH `/api/v1/learning/lessons/{lessonId}/status`
-
-Mục đích:
-
-- Bật/tắt trạng thái active của lesson.
-
-Màn hình sử dụng:
-
-- CMS/Admin publish/unpublish lesson
-
-Input body:
-
-```json
-{
-  "isActive": false
-}
-```
-
-Output:
-
-- `200 OK`
-- `LessonResponse`
-
-### 6.7 DELETE `/api/v1/learning/lessons/{lessonId}`
-
-Mục đích:
-
-- Xóa lesson.
-
-Màn hình sử dụng:
-
-- CMS/Admin
-
-Output:
-
-- `204 No Content`
-
-### 6.8 POST `/api/v1/learning/lessons/{lessonId}/enroll`
-
-Mục đích:
-
-- Theo tên gọi là enroll lesson cho user hiện tại.
-
-Màn hình sử dụng dự kiến:
-
-- Nút bắt đầu học
-- CTA enroll lesson
-
-Output thực tế hiện tại:
-
-- `200 OK`
-- Chỉ trả `LessonResponse` của lesson
-- Chưa ghi nhận enrollment xuống database
-
-Lưu ý quan trọng:
-
-- Endpoint này hiện chưa thực hiện nghiệp vụ enroll thật.
-- FE không nên dùng endpoint này như một nguồn sự thật cho trạng thái đã enroll.
-
-### 6.9 POST `/api/v1/learning/courses/{lessonId}/enroll`
-
-Mục đích:
-
-- Alias của endpoint enroll bên trên.
-
-Lưu ý quan trọng:
-
-- Path đang dùng tên `courses/{lessonId}/enroll`, dễ gây nhầm lẫn vì param thực chất là `lessonId`.
-- Nên xem đây là route legacy/không khuyến khích dùng cho FE mới.
-
-### 6.10 PATCH `/api/v1/learning/lessons/{lessonId}/blocks/{blockId}/progress`
-
-Mục đích:
-
-- Cập nhật trạng thái học theo từng content block cho user hiện tại.
-
-Input body:
-
-```json
-{
-  "status": "COMPLETED",
-  "score": 8,
-  "maxScore": 10
-}
-```
-
-Output:
-
-- `200 OK`
-- `LessonBlockProgressResponse`
-
-### 6.11 GET `/api/v1/learning/lessons/{lessonId}/blocks/progress`
-
-Mục đích:
-
-- Lấy danh sách tiến độ block của lesson theo user hiện tại.
-
-Output:
-
-- `200 OK`
-- `List<LessonBlockProgressResponse>`
-
-## 7. Progress APIs
-
-### 7.1 GET `/api/v1/learning/progress`
-
-Mục đích:
-
-- Lấy danh sách course chưa hoàn thành mà user đã có học dở.
-- Dùng cho FE hiển thị card progress theo course.
-
-Màn hình sử dụng:
-
-- Trang My Learning
-- Continue learning theo course
-- Dashboard học tập cá nhân
-
-Output:
-
-- `200 OK`
-- `List<CourseProgressResponse>`
-
-Ví dụ response:
-
-```json
-[
-  {
-    "courseId": "11111111-1111-1111-1111-111111111111",
-    "courseName": "Tim mạch cơ bản",
-    "courseSlug": "tim-mach-co-ban",
-    "lastStudiedAt": "2026-04-07T20:42:39",
-    "completionPercent": 35
-  }
-]
-```
-
-Lưu ý:
-
-- Kết quả được nhóm theo course, không còn trả progress theo lesson.
-- Chỉ trả các course chưa hoàn thành.
-- Trong code hiện tại, do chưa có enrollment thật từ `UserCourse`, "đã đăng ký" đang được hiểu là user đã có ít nhất một `UserLesson` trong course đó.
-
-### 7.2 GET `/api/v1/learning/progress/{userId}`
-
-Mục đích:
-
-- Lấy course progress summary của một user theo `userId`.
-
-Màn hình sử dụng:
-
-- Admin support
-- Internal dashboard
-
-Lưu ý:
-
-- Vì vẫn yêu cầu JWT, endpoint này phù hợp hơn cho công cụ nội bộ/admin.
-
-### 7.3 POST `/api/v1/learning/progress/streak/ping`
-
-Mục đích:
-
-- Ghi nhận user có hoạt động học trong ngày và cập nhật streak.
-
-Màn hình sử dụng:
-
-- Sau khi hoàn thành lesson
-- Khi mở app và bắt đầu phiên học
-- Sau khi submit quiz hoặc tương tác học hợp lệ
-
-Output:
-
-- `200 OK`
-- Trả object `UserDailyStreak`
-
-Ví dụ response:
-
-```json
-{
-  "userId": "11111111-1111-1111-1111-111111111001",
-  "currentStreak": 5,
-  "longestStreak": 8,
-  "lastActivityDate": "2026-04-07",
-  "streakStartedAt": "2026-04-03",
-  "totalActiveDays": 12,
-  "createdAt": "2026-04-01T08:00:00",
-  "updatedAt": "2026-04-07T20:42:39"
-}
-```
-
-Lưu ý:
-
-- Nếu gọi nhiều lần trong cùng ngày, logic hiện tại không tăng thêm streak.
-
-## 8. AI Feedback APIs
-
-### 8.1 POST `/api/v1/learning/ai-feedback`
-
-Mục đích:
-
-- Sinh feedback AI cho câu trả lời của user.
-
-Màn hình sử dụng:
-
-- Quiz review
-- Practice answer review
-- Self-learning explanation popup
-
-Input body thực tế:
-
-```json
-{
-  "referenceId": "33333333-3333-3333-3333-333333333333",
-  "referenceType": "LESSON",
-  "questionContent": "Tim có bao nhiêu buồng?",
-  "userAnswer": "2 buồng",
-  "isCorrect": false
-}
-```
-
-Giải thích field:
-
-- `referenceId`: ID lesson/question/reference liên quan
-- `referenceType`: kiểu reference, hiện là string tự do
-- `questionContent`: nội dung câu hỏi
-- `userAnswer`: câu trả lời của user
-- `isCorrect`: backend dựa vào kết quả này để sinh giải thích đúng/sai
-
-Output thực tế:
-
-- `200 OK`
-- Trả entity `AiLearningFeedback`
-
-Ví dụ response:
-
-```json
-{
-  "id": "44444444-4444-4444-4444-444444444444",
-  "userId": "11111111-1111-1111-1111-111111111001",
-  "referenceId": "33333333-3333-3333-3333-333333333333",
-  "referenceType": "LESSON",
-  "questionContent": "Tim có bao nhiêu buồng?",
-  "userAnswer": "2 buồng",
-  "isCorrect": false,
-  "aiExplanation": "[Mock AI] Câu trả lời của bạn chưa đủ ý sách giáo khoa. Hãy xem lại chương Hệ Hô Hấp.",
-  "createdAt": "2026-04-07T20:50:00"
-}
-```
-
-Lưu ý quan trọng:
-
-- Endpoint đang dùng `Map<String, Object>` thay vì DTO typed.
-- `aiExplanation` hiện là mock text, chưa gọi AI thật.
-- FE nên xem đây là API stub/placeholder.
-
-### 8.2 GET `/api/v1/learning/ai-feedback`
-
-Mục đích:
-
-- Lấy toàn bộ feedback AI đã lưu.
-
-Màn hình sử dụng:
-
-- Admin review feedback
-- Lịch sử giải thích AI
-
-Output:
-
-- `200 OK`
-- `List<AiFeedbackResponse>`
-
-### 8.3 PUT `/api/v1/learning/ai-feedback/{id}`
-
-Mục đích:
-
-- Sửa nội dung feedback AI hoặc trạng thái đúng/sai.
-
-Màn hình sử dụng:
-
-- Admin/CMS chỉnh feedback
-
-Input body:
-
-```json
-{
-  "aiExplanation": "Giải thích cập nhật",
-  "isCorrect": true
-}
-```
-
-Output:
-
-- `200 OK`
-- `AiFeedbackResponse`
-
-### 8.4 DELETE `/api/v1/learning/ai-feedback/{id}`
-
-Mục đích:
-
-- Xóa feedback AI.
-
-Màn hình sử dụng:
-
-- Admin/CMS
-
-Output:
-
-- `204 No Content`
-
-## 9. Root và Theme
-
-### 9.1 GET `/`
-
-Mục đích:
-
-- Redirect root path sang Swagger UI.
-
-Output:
-
-- Redirect tới `/swagger-ui/index.html`
-
-### 9.2 Theme APIs
-
-Trạng thái hiện tại:
-
-- `ThemeController.java` là file legacy rỗng
-- `ThemeRequest.java` và `ThemeResponse.java` hiện không có endpoint active tương ứng
-
-Kết luận:
-
-- Hiện tại service này chưa publish API theme để FE sử dụng
-
-## 10. Đề xuất dùng cho FE
-
-### 10.1 Cho app người học
-
-Nên dùng:
+| --- | --- |
+| Course catalog | `GET /api/v1/learning/courses` |
+| My enrolled courses | `GET /api/v1/learning/courses/enrolled` |
+| Course available cho learner | `GET /api/v1/learning/courses/student/available` |
+| Chi tiết course / roadmap | `GET /api/v1/learning/courses/{courseId}`, `GET /api/v1/learning/courses/{courseId}/roadmap` |
+| Learning path | `GET /api/v1/learning/courses/path` |
+| Enroll course | `POST /api/v1/learning/courses/{courseId}/enroll` |
+| Danh sách section | `GET /api/v1/learning/courses/{courseId}/sections` |
+| Danh sách lesson / lesson detail | `GET /api/v1/learning/sections/{sectionId}/lessons`, `GET /api/v1/learning/lessons/{lessonId}` |
+| Hoàn thành lesson | `POST /api/v1/learning/lessons/{lessonId}/complete` |
+| Theo dõi progress | `GET /api/v1/learning/progress`, `GET /api/v1/learning/progress/activity`, `POST /api/v1/learning/progress/streak/ping` |
+| Theo dõi block progress | `PATCH /api/v1/learning/lessons/{lessonId}/blocks/{blockId}/progress`, `GET /api/v1/learning/lessons/{lessonId}/blocks/progress` |
+| AI feedback | `POST /api/v1/learning/ai-feedback`, `GET /api/v1/learning/ai-feedback` |
+| Contract assessment nội bộ | `GET /api/v1/learning/internal/assessment-access`, `POST /api/v1/learning/internal/assessment-result` |
+
+## 5. Nhóm API — Course và Section
+
+### 5.1 Catalog, enrollment, roadmap
 
 - `GET /api/v1/learning/courses`
+  - **Mục đích:** Lấy toàn bộ course
+  - **Response:** `200 OK`, `ApiResponse<List<CourseResponse>>`
+- `GET /api/v1/learning/courses/enrolled`
+  - **Mục đích:** Lấy danh sách course learner đã enroll
+  - **Response:** `200 OK`, `ApiResponse<List<CourseResponse>>`
+- `GET /api/v1/learning/courses/student/available`
+  - **Mục đích:** Lấy course learner còn có thể học
+  - **Response:** `200 OK`, `ApiResponse<List<CourseResponse>>`
 - `GET /api/v1/learning/courses/{courseId}`
+  - **Mục đích:** Lấy chi tiết course
+  - **Response:** `200 OK`, `ApiResponse<CourseResponse>`
+- `GET /api/v1/learning/courses/{courseId}/roadmap`
+  - **Mục đích:** Lấy roadmap/outline của course
+  - **Response:** `200 OK`, `ApiResponse<CourseResponse>`
+- `GET /api/v1/learning/courses/path`
+  - **Mục đích:** Lấy learning path tổng hợp
+  - **Response:** `200 OK`, `ApiResponse<Map<String, Object>>`
+- `POST /api/v1/learning/courses/{courseId}/enroll`
+  - **Mục đích:** Enroll learner vào course
+  - **Response:** `201 Created`, `ApiResponse<Void>`
+  - **Ghi chú:** Endpoint này khác với `POST /lessons/{lessonId}/enroll`
+- `POST /api/v1/learning/courses`
+  - **Mục đích:** Tạo course mới
+  - **Body:** `multipart/form-data` gồm phần `request` (JSON parse thành `CourseRequest`) và `iconFile`
+  - **Response:** `201 Created`, `ApiResponse<CourseResponse>`
+  - **Ghi chú:** Nếu JSON trong `request` không hợp lệ sẽ trả `400`
+- `PUT /api/v1/learning/courses/{courseId}`
+  - **Mục đích:** Cập nhật course
+  - **Body:** `CourseRequest`
+  - **Response:** `200 OK`, `ApiResponse<CourseResponse>`
+- `DELETE /api/v1/learning/courses/{courseId}`
+  - **Mục đích:** Xóa course
+  - **Response:** `200 OK`, `ApiResponse<Void>`
+
+### 5.2 Section trong course
+
+- `GET /api/v1/learning/courses/{courseId}/sections`
+  - **Mục đích:** Lấy section của course
+  - **Response:** `200 OK`, `ApiResponse<List<SectionSummaryResponse>>`
+- `POST /api/v1/learning/courses/{courseId}/sections`
+  - **Mục đích:** Tạo section trong course
+  - **Body:** `SectionRequest`
+  - **Response:** `201 Created`, `ApiResponse<SectionResponse>`
 - `GET /api/v1/learning/sections/{sectionId}`
+  - **Mục đích:** Lấy chi tiết section
+  - **Response:** `200 OK`, `ApiResponse<SectionResponse>`
+- `PUT /api/v1/learning/sections/{sectionId}`
+  - **Mục đích:** Cập nhật section
+  - **Body:** `SectionRequest`
+  - **Response:** `200 OK`, `ApiResponse<SectionResponse>`
+- `DELETE /api/v1/learning/sections/{sectionId}`
+  - **Mục đích:** Xóa section
+  - **Response:** `200 OK`, `ApiResponse<Void>`
+
+## 6. Nhóm API — Lesson và Progress
+
+### 6.1 Lesson player, completion, analytics
+
+- `GET /api/v1/learning/sections/{sectionId}/lessons`
+  - **Mục đích:** Lấy lesson theo section
+  - **Response:** `200 OK`, `ApiResponse<List<LessonSummaryResponse>>`
 - `GET /api/v1/learning/lessons/{lessonId}`
-- `GET /api/v1/learning/progress`
-- `POST /api/v1/learning/progress/streak/ping`
-- `POST /api/v1/learning/ai-feedback`
-
-Không nên phụ thuộc mạnh vào:
-
+  - **Mục đích:** Lấy chi tiết lesson
+  - **Response:** `200 OK`, `ApiResponse<LessonResponse>`
+- `POST /api/v1/learning/lessons`
+  - **Mục đích:** Tạo lesson mới
+  - **Body:** `LessonRequest`
+  - **Response:** `201 Created`, `ApiResponse<LessonResponse>`
+- `POST /api/v1/learning/sections/{sectionId}/lessons`
+  - **Mục đích:** Tạo lesson trong section cụ thể
+  - **Body:** `LessonRequest`
+  - **Response:** `201 Created`, `ApiResponse<LessonResponse>`
+  - **Ghi chú:** `sectionId` trong body sẽ bị override bằng path param nếu có
+- `PUT /api/v1/learning/lessons/{lessonId}`
+  - **Mục đích:** Cập nhật lesson
+  - **Body:** `LessonRequest`
+  - **Response:** `200 OK`, `ApiResponse<LessonResponse>`
+- `DELETE /api/v1/learning/lessons/{lessonId}`
+  - **Mục đích:** Xóa lesson
+  - **Response:** `200 OK`, `ApiResponse<Void>`
+- `PATCH /api/v1/learning/lessons/{lessonId}/status`
+  - **Mục đích:** Đổi trạng thái lesson
+  - **Body:** `LessonStatusRequest`
+  - **Response:** `200 OK`, `ApiResponse<LessonResponse>`
 - `POST /api/v1/learning/lessons/{lessonId}/enroll`
-- `POST /api/v1/learning/courses/{lessonId}/enroll`
+  - **Mục đích:** Ghi nhận enroll ở cấp lesson
+  - **Response:** `200 OK`, `ApiResponse<LessonResponse>`
+  - **Ghi chú:** Đây là route lịch sử khác với enroll course; FE không nên nhầm hai contract này
+- `POST /api/v1/learning/lessons/{lessonId}/complete`
+  - **Mục đích:** Đánh dấu hoàn thành lesson
+  - **Response:** `200 OK`, `ApiResponse<Void>`
+- `PATCH /api/v1/learning/lessons/{lessonId}/blocks/{blockId}/progress`
+  - **Mục đích:** Cập nhật tiến độ theo block
+  - **Body:** `LessonBlockProgressRequest`
+  - **Response:** `200 OK`, `ApiResponse<LessonBlockProgressResponse>`
+- `GET /api/v1/learning/lessons/{lessonId}/blocks/progress`
+  - **Mục đích:** Lấy tiến độ block của lesson theo user hiện tại
+  - **Response:** `200 OK`, `ApiResponse<List<LessonBlockProgressResponse>>`
+- `GET /api/v1/learning/progress`
+  - **Mục đích:** Lấy progress theo course của user hiện tại
+  - **Response:** `200 OK`, `ApiResponse<List<CourseProgressResponse>>`
+- `GET /api/v1/learning/progress/{userId}`
+  - **Mục đích:** Lấy progress của user theo `userId`
+  - **Response:** `200 OK`, `ApiResponse<List<CourseProgressResponse>>`
+  - **Ghi chú:** Controller chặn xem user khác nếu caller không phải admin
+- `GET /api/v1/learning/progress/activity`
+  - **Mục đích:** Lấy activity summary gần đây
+  - **Query / Path:** `days` mặc định là `7`
+  - **Response:** `200 OK`, `ApiResponse<LessonActivitySummaryResponse>`
+- `POST /api/v1/learning/progress/streak/ping`
+  - **Mục đích:** Cập nhật daily streak
+  - **Response:** `200 OK`, `ApiResponse<UserDailyStreak>`
 
-### 10.2 Cho CMS/Admin
+## 7. Nhóm API — AI Feedback và contract nội bộ
 
-Nên dùng:
+### 7.1 Feedback học tập và integration với assessment
 
-- Tất cả endpoint `POST/PUT/DELETE` của course/section/lesson
+- `POST /api/v1/learning/ai-feedback`
+  - **Mục đích:** Tạo AI feedback cho learner
+  - **Body:** `AiFeedbackCreateRequest`
+  - **Response:** `201 Created`, `ApiResponse<AiLearningFeedback>`
 - `GET /api/v1/learning/ai-feedback`
+  - **Mục đích:** Liệt kê feedback
+  - **Response:** `200 OK`, `ApiResponse<List<AiFeedbackResponse>>`
+  - **Ghi chú:** Admin thấy toàn bộ; learner chỉ thấy feedback của chính mình
 - `PUT /api/v1/learning/ai-feedback/{id}`
+  - **Mục đích:** Cập nhật feedback
+  - **Body:** `AiFeedbackUpdateRequest`
+  - **Response:** `200 OK`, `ApiResponse<AiFeedbackResponse>`
 - `DELETE /api/v1/learning/ai-feedback/{id}`
+  - **Mục đích:** Xóa feedback
+  - **Response:** `200 OK`, `ApiResponse<Void>`
+- `GET /api/v1/learning/internal/assessment-access`
+  - **Mục đích:** Kiểm tra user có quyền vào assessment của section/lesson hay không
+  - **Query / Path:** `userId`, `sectionId`, `lessonId` là optional
+  - **Response:** `204 No Content` nếu được phép, `403` nếu bị từ chối
+  - **Ghi chú:** Bắt buộc header `X-Internal-Token`
+- `POST /api/v1/learning/internal/assessment-result`
+  - **Mục đích:** Nhận kết quả assessment từ service khác
+  - **Body:** `AssessmentResultSyncRequest`
+  - **Response:** `202 Accepted`
+  - **Ghi chú:** Hiện tại controller mới log dữ liệu sync và chưa cập nhật domain state rõ ràng ở response
 
-## 11. Known Issues / Caveats
+## 8. Webhook / callback (nếu có)
 
-- Response format chưa thống nhất theo `ApiResponse<T>`
-- `IllegalArgumentException` đang trả `401` thay vì `400` hoặc `404`
-- `POST /ai-feedback` trả entity, không phải DTO
-- `POST /ai-feedback` hiện dùng mock AI response
-- Route `POST /courses/{lessonId}/enroll` bị đặt tên path gây hiểu nhầm
-- Route enroll hiện chưa lưu enrollment thực tế
-- `GET /courses` và `GET /courses/{id}` có thể trả payload sâu vì lồng section và lesson
-- `Theme` chưa có API active dù vẫn còn request/response class
+- Không áp dụng
 
-## 12. Gợi ý chuẩn hóa sau này
+## 9. Hợp đồng với service khác
 
-- Chuẩn hóa toàn bộ response về `ApiResponse<T>`
-- Tách DTO riêng cho toàn bộ endpoint, không trả entity trực tiếp
-- Chuẩn hóa mã lỗi: `400`, `404`, `401`, `403`, `500`
-- Đổi `POST /ai-feedback` sang DTO request typed
-- Tách rõ API learner và API admin
-- Sửa hoặc bỏ route enroll legacy gây nhầm lẫn
+- Nhận JWT của auth service cho toàn bộ endpoint business
+- Cung cấp internal contract cho assessment service qua `X-Internal-Token`
+- Upload icon khóa học lên Supabase Storage trong flow `POST /api/v1/learning/courses`
+- Hiện contract admin/learner ở controller chưa siết chặt bằng role, nên nếu website/CMS cần tách quyền cứng thì cần bổ sung auth rule ở backend
+
+---
+
+*Cập nhật lần cuối: 2026-04-13 — Backend team*
