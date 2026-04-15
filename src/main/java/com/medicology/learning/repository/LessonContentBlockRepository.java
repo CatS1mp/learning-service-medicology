@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface LessonContentBlockRepository extends JpaRepository<LessonContentBlock, UUID> {
     List<LessonContentBlock> findByLessonIdOrderByOrderIndexAsc(UUID lessonId);
+    List<LessonContentBlock> findByAssessmentId(UUID assessmentId);
 }

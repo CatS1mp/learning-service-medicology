@@ -11,6 +11,7 @@ import com.medicology.learning.repository.UserDailyStreakRepository;
 import com.medicology.learning.repository.UserLessonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -73,17 +74,32 @@ public class ProgressService {
     }
 
     public UserDailyStreak updateStreak(UUID userId) {
-        UserDailyStreak streak = userDailyStreakRepository.findById(userId)
-            .orElseGet(() -> {
-                UserDailyStreak newStreak = new UserDailyStreak();
-                newStreak.setUserId(userId);
-                newStreak.setCurrentStreak(0);
-                newStreak.setLongestStreak(0);
-                newStreak.setTotalActiveDays(0);
-                return newStreak;
-            });
-
         LocalDate today = LocalDate.now();
+        UserDailyStreak streak = userDailyStreakRepository.findById(userId)
+                .orElseGet(() -> createInitialStreak(userId));
+        applyStreakRules(streak, today);
+
+        try {
+            return userDailyStreakRepository.save(streak);
+        } catch (DataIntegrityViolationException ex) {
+            // Concurrent first-time pings can race on insert with same user_id.
+            UserDailyStreak existing = userDailyStreakRepository.findById(userId)
+                    .orElseThrow(() -> ex);
+            applyStreakRules(existing, today);
+            return userDailyStreakRepository.save(existing);
+        }
+    }
+
+    private UserDailyStreak createInitialStreak(UUID userId) {
+        UserDailyStreak newStreak = new UserDailyStreak();
+        newStreak.setUserId(userId);
+        newStreak.setCurrentStreak(0);
+        newStreak.setLongestStreak(0);
+        newStreak.setTotalActiveDays(0);
+        return newStreak;
+    }
+
+    private void applyStreakRules(UserDailyStreak streak, LocalDate today) {
         if (streak.getLastActivityDate() == null) {
             streak.setCurrentStreak(1);
             streak.setLongestStreak(1);
@@ -101,8 +117,6 @@ public class ProgressService {
             streak.setTotalActiveDays(streak.getTotalActiveDays() + 1);
             streak.setLastActivityDate(today);
         }
-
-        return userDailyStreakRepository.save(streak);
     }
 
     private CourseProgressResponse mapToCourseProgress(List<UserLesson> userLessons) {

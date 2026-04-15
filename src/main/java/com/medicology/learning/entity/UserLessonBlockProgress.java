@@ -48,6 +48,13 @@ public class UserLessonBlockProgress {
     @Column(name = "max_score")
     private Integer maxScore;
 
+    @Column(name = "attempt_id")
+    private UUID attemptId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "grading_status", nullable = false, length = 20, columnDefinition = "varchar(20) default 'NOT_GRADED'")
+    private AssessmentGradingStatus gradingStatus = AssessmentGradingStatus.NOT_GRADED;
+
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 

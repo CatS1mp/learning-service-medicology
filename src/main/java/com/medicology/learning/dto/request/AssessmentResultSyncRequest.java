@@ -12,5 +12,6 @@ public record AssessmentResultSyncRequest(
         UUID attemptId,
         BigDecimal score,
         Boolean passed,
+        String resultStatus,
         Instant completedAt
 ) {}

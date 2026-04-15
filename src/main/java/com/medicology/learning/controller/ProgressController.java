@@ -52,4 +52,12 @@ public class ProgressController {
                 "Streak updated successfully",
                 progressService.updateStreak(user.getId())));
     }
+
+    @GetMapping("/streak/ping")
+    public ResponseEntity<ApiResponse<UserDailyStreak>> pingStreakGet(@AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(ApiResponse.success(
+                HttpStatus.OK.value(),
+                "Streak updated successfully",
+                progressService.updateStreak(user.getId())));
+    }
 }

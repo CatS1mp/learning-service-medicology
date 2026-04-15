@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JWTDecoder {
-
     @Value("${jwt.secret}")
     private String secretKey;
 
@@ -92,4 +91,5 @@ public class JWTDecoder {
             return false;
         }
     }
+
 }
