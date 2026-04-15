@@ -102,6 +102,10 @@ public class LessonContentBlockValidator {
             throw new InvalidRequestException(path + ".assessmentId is required when questionId is set.");
         }
 
+        if (gradableKind && (block.getAssessmentId() == null || block.getQuestionId() == null)) {
+            throw new InvalidRequestException(path + " gradable blocks require both assessmentId and questionId.");
+        }
+
         if (!gradableKind && (block.getAssessmentId() != null || block.getQuestionId() != null)) {
             throw new InvalidRequestException(path + " assessment references are only allowed for gradable kinds.");
         }

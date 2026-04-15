@@ -2,6 +2,7 @@ package com.medicology.learning.controller;
 
 import com.medicology.learning.dto.request.AssessmentResultSyncRequest;
 import com.medicology.learning.repository.UserLessonRepository;
+import com.medicology.learning.service.LessonService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ public class InternalLearningApiController {
     private static final Logger log = LoggerFactory.getLogger(InternalLearningApiController.class);
 
     private final UserLessonRepository userLessonRepository;
+    private final LessonService lessonService;
 
     @Value("${internal.api.token:}")
     private String internalApiToken;
@@ -52,14 +54,16 @@ public class InternalLearningApiController {
             @RequestBody AssessmentResultSyncRequest body) {
         validateToken(token);
         log.info(
-                "assessment_result_sync userId={} courseId={} sectionId={} assessmentId={} attemptId={} score={} passed={}",
+                "assessment_result_sync userId={} courseId={} sectionId={} assessmentId={} attemptId={} score={} passed={} resultStatus={}",
                 body.userId(),
                 body.courseId(),
                 body.sectionId(),
                 body.assessmentId(),
                 body.attemptId(),
                 body.score(),
-                body.passed());
+                body.passed(),
+                body.resultStatus());
+        lessonService.applyAssessmentResultSync(body);
         return ResponseEntity.accepted().build();
     }
 

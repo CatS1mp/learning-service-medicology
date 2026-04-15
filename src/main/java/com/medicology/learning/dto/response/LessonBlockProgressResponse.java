@@ -1,5 +1,6 @@
 package com.medicology.learning.dto.response;
 
+import com.medicology.learning.entity.AssessmentGradingStatus;
 import com.medicology.learning.entity.BlockProgressStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,8 @@ public class LessonBlockProgressResponse {
     private BlockProgressStatus status;
     private Integer score;
     private Integer maxScore;
+    private UUID attemptId;
+    private AssessmentGradingStatus gradingStatus;
     private LocalDateTime completedAt;
     private LocalDateTime updatedAt;
 }

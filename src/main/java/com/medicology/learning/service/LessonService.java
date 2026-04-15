@@ -3,11 +3,13 @@ package com.medicology.learning.service;
 import com.medicology.learning.dto.request.LessonRequest;
 import com.medicology.learning.dto.request.LessonBlockProgressRequest;
 import com.medicology.learning.dto.request.LessonContentBlockRequest;
+import com.medicology.learning.dto.request.AssessmentResultSyncRequest;
 import com.medicology.learning.dto.response.LessonBlockProgressResponse;
 import com.medicology.learning.dto.response.LessonContentBlockResponse;
 import com.medicology.learning.dto.request.LessonStatusRequest;
 import com.medicology.learning.dto.response.LessonResponse;
 import com.medicology.learning.dto.response.LessonSummaryResponse;
+import com.medicology.learning.entity.AssessmentGradingStatus;
 import com.medicology.learning.entity.BlockProgressStatus;
 import com.medicology.learning.entity.Lesson;
 import com.medicology.learning.entity.LessonContentBlock;
@@ -28,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
 @Service
@@ -149,13 +152,49 @@ public class LessonService {
 
         BlockProgressStatus status = request.getStatus() == null ? BlockProgressStatus.IN_PROGRESS : request.getStatus();
         progress.setStatus(status);
-        progress.setScore(request.getScore());
-        progress.setMaxScore(request.getMaxScore());
+        progress.setAttemptId(request.getAttemptId());
         progress.setLessonId(lessonId);
         progress.setLessonContentBlock(block);
+        progress.setGradingStatus(AssessmentGradingStatus.NOT_GRADED);
         progress.setCompletedAt(status == BlockProgressStatus.COMPLETED ? LocalDateTime.now() : null);
 
         return mapToBlockProgressResponse(userLessonBlockProgressRepository.save(progress));
+    }
+
+    public void applyAssessmentResultSync(AssessmentResultSyncRequest request) {
+        List<LessonContentBlock> blocks = lessonContentBlockRepository.findByAssessmentId(request.assessmentId());
+        if (blocks.isEmpty()) {
+            return;
+        }
+
+        AssessmentGradingStatus gradingStatus = "FINAL".equalsIgnoreCase(request.resultStatus())
+                ? AssessmentGradingStatus.FINALIZED
+                : AssessmentGradingStatus.PENDING_REVIEW;
+        int score = request.score() == null ? 0 : toIntegerScore(request.score());
+        int maxScore = Math.max(1, blocks.size());
+
+        for (LessonContentBlock block : blocks) {
+            UserLessonBlockProgress progress = userLessonBlockProgressRepository
+                    .findByUserIdAndLessonContentBlockId(request.userId(), block.getId())
+                    .orElseGet(() -> UserLessonBlockProgress.builder()
+                            .userId(request.userId())
+                            .lessonId(block.getLesson().getId())
+                            .lessonContentBlock(block)
+                            .status(BlockProgressStatus.IN_PROGRESS)
+                            .build());
+
+            progress.setLessonId(block.getLesson().getId());
+            progress.setLessonContentBlock(block);
+            progress.setAttemptId(request.attemptId());
+            progress.setScore(score);
+            progress.setMaxScore(maxScore);
+            progress.setGradingStatus(gradingStatus);
+            if (gradingStatus == AssessmentGradingStatus.FINALIZED) {
+                progress.setStatus(BlockProgressStatus.COMPLETED);
+                progress.setCompletedAt(LocalDateTime.now());
+            }
+            userLessonBlockProgressRepository.save(progress);
+        }
     }
 
     public List<LessonBlockProgressResponse> getBlockProgress(UUID lessonId, UUID userId) {
@@ -261,8 +300,14 @@ public class LessonService {
                 .status(progress.getStatus())
                 .score(progress.getScore())
                 .maxScore(progress.getMaxScore())
+                .attemptId(progress.getAttemptId())
+                .gradingStatus(progress.getGradingStatus())
                 .completedAt(progress.getCompletedAt())
                 .updatedAt(progress.getUpdatedAt())
                 .build();
+    }
+
+    private int toIntegerScore(BigDecimal score) {
+        return score.intValue();
     }
 }
