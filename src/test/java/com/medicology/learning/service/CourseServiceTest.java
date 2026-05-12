@@ -5,7 +5,7 @@ import com.medicology.learning.dto.response.CourseResponse;
 import com.medicology.learning.entity.Course;
 import com.medicology.learning.exception.StorageUploadException;
 import com.medicology.learning.repository.CourseRepository;
-import com.medicology.learning.repository.LessonRepository;
+import com.medicology.learning.repository.ContentRepository;
 import com.medicology.learning.repository.SectionRepository;
 import com.medicology.learning.repository.UserCourseRepository;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class CourseServiceTest {
     private SectionRepository sectionRepository;
 
     @Mock
-    private LessonRepository lessonRepository;
+    private ContentRepository contentRepository;
 
     @Mock
     private SupabaseStorageService supabaseStorageService;
@@ -66,7 +66,7 @@ class CourseServiceTest {
 
         when(supabaseStorageService.uploadCourseIcon(iconFile)).thenReturn(iconUrl);
         when(sectionRepository.countByCourseId(any(UUID.class))).thenReturn(0L);
-        when(lessonRepository.countByCourseId(any(UUID.class))).thenReturn(0L);
+        when(contentRepository.countByCourseId(any(UUID.class))).thenReturn(0L);
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> {
             Course course = invocation.getArgument(0);
             course.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));

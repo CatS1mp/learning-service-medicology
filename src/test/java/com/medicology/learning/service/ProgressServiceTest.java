@@ -1,22 +1,19 @@
 package com.medicology.learning.service;
 
+import com.medicology.learning.dto.response.ContentActivitySummaryResponse;
 import com.medicology.learning.dto.response.CourseProgressResponse;
 import com.medicology.learning.entity.Course;
-import com.medicology.learning.entity.Lesson;
-import com.medicology.learning.entity.Section;
-import com.medicology.learning.entity.UserLesson;
-import com.medicology.learning.repository.LessonRepository;
+import com.medicology.learning.entity.UserCourse;
+import com.medicology.learning.entity.UserCourseStatus;
+import com.medicology.learning.repository.UserCourseRepository;
 import com.medicology.learning.repository.UserDailyStreakRepository;
-import com.medicology.learning.repository.UserLessonRepository;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -25,19 +22,16 @@ import static org.mockito.Mockito.when;
 class ProgressServiceTest {
 
     @Mock
-    private UserLessonRepository userLessonRepository;
+    private UserCourseRepository userCourseRepository;
 
     @Mock
     private UserDailyStreakRepository userDailyStreakRepository;
-
-    @Mock
-    private LessonRepository lessonRepository;
 
     @InjectMocks
     private ProgressService progressService;
 
     @Test
-    void getUserProgressReturnsAllCoursesWithProgressSortedByLatestStudyDate() {
+    void getUserProgressReturnsEnrollmentsOnly() {
         UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111001");
         UUID courseOneId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1");
         UUID courseTwoId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2");
@@ -45,60 +39,33 @@ class ProgressServiceTest {
         Course courseOne = buildCourse(courseOneId, "Tim mach co ban", "tim-mach-co-ban");
         Course courseTwo = buildCourse(courseTwoId, "Ho hap co ban", "ho-hap-co-ban");
 
-        List<UserLesson> userLessons = List.of(
-                buildUserLesson(userId, UUID.fromString("10000000-0000-0000-0000-000000000001"), courseOne,
-                        LocalDateTime.of(2026, 4, 7, 21, 0)),
-                buildUserLesson(userId, UUID.fromString("10000000-0000-0000-0000-000000000002"), courseOne,
-                        LocalDateTime.of(2026, 4, 6, 20, 0)),
-                buildUserLesson(userId, UUID.fromString("20000000-0000-0000-0000-000000000001"), courseTwo,
-                        LocalDateTime.of(2026, 4, 5, 19, 0))
-        );
+        List<UserCourse> enrolled = List.of(
+                UserCourse.builder().userId(userId).courseId(courseOneId).course(courseOne).status(UserCourseStatus.ENROLLED).build(),
+                UserCourse.builder().userId(userId).courseId(courseTwoId).course(courseTwo).status(UserCourseStatus.ENROLLED).build());
 
-        when(userLessonRepository.findByUserId(userId)).thenReturn(userLessons);
-        when(lessonRepository.countByCourseId(courseOneId)).thenReturn(4L);
-        when(lessonRepository.countByCourseId(courseTwoId)).thenReturn(1L);
+        when(userCourseRepository.findByUserIdAndStatusOrderByEnrolledAtDesc(userId, UserCourseStatus.ENROLLED))
+                .thenReturn(enrolled);
 
         List<CourseProgressResponse> result = progressService.getUserProgress(userId);
 
         assertThat(result).hasSize(2);
+        assertThat(result).allSatisfy(item -> {
+            assertThat(item.getCompletionPercent()).isZero();
+            assertThat(item.getLastStudiedAt()).isNull();
+        });
         assertThat(result.get(0).getCourseId()).isEqualTo(courseOneId);
-        assertThat(result.get(0).getCourseName()).isEqualTo("Tim mach co ban");
-        assertThat(result.get(0).getLastStudiedAt()).isEqualTo(LocalDateTime.of(2026, 4, 7, 21, 0));
-        assertThat(result.get(0).getCompletionPercent()).isEqualTo(50);
         assertThat(result.get(1).getCourseId()).isEqualTo(courseTwoId);
-        assertThat(result.get(1).getCompletionPercent()).isEqualTo(100);
     }
 
-    private UserLesson buildUserLesson(UUID userId, UUID lessonId, Course course, LocalDateTime completedAt) {
-        Section section = Section.builder()
-                .id(UUID.randomUUID())
-                .course(course)
-                .name("Section")
-                .slug("section")
-                .orderIndex(1)
-                .estimatedDurationMinutes(20)
-                .build();
+    @Test
+    void getContentActivityReturnsEmptySeriesAcrossRequestedDays() {
+        UUID userId = UUID.randomUUID();
 
-        Lesson lesson = Lesson.builder()
-                .id(lessonId)
-                .section(section)
-                .name("Lesson")
-                .description("Description")
-                .slug("lesson")
-                .orderIndex(1)
-                .estimatedDurationMinutes(10)
-                .difficultyLevel("beginner")
-                .isActive(true)
-                .content("{}")
-                .build();
+        ContentActivitySummaryResponse summary = progressService.getContentActivity(userId, 7);
 
-        return UserLesson.builder()
-                .userId(userId)
-                .lessonId(lessonId)
-                .lesson(lesson)
-                .quizzesCorrect(3)
-                .completedAt(completedAt)
-                .build();
+        assertThat(summary.getActivities()).hasSize(7);
+        assertThat(summary.getTotalCompletedContents()).isZero();
+        assertThat(summary.getActivities()).allSatisfy(item -> assertThat(item.getCompletedContents()).isZero());
     }
 
     private Course buildCourse(UUID courseId, String name, String slug) {
