@@ -14,4 +14,6 @@ import java.util.UUID;
 public interface UserCourseRepository extends JpaRepository<UserCourse, UserCourseId> {
     List<UserCourse> findByUserIdAndStatusOrderByEnrolledAtDesc(UUID userId, UserCourseStatus status);
     Optional<UserCourse> findByUserIdAndCourseId(UUID userId, UUID courseId);
+
+    boolean existsByUserIdAndCourseIdAndStatus(UUID userId, UUID courseId, UserCourseStatus status);
 }

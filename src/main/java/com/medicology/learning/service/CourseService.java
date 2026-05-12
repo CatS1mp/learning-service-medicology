@@ -6,7 +6,7 @@ import com.medicology.learning.entity.Course;
 import com.medicology.learning.entity.UserCourse;
 import com.medicology.learning.entity.UserCourseStatus;
 import com.medicology.learning.repository.CourseRepository;
-import com.medicology.learning.repository.LessonRepository;
+import com.medicology.learning.repository.ContentRepository;
 import com.medicology.learning.repository.SectionRepository;
 import com.medicology.learning.repository.UserCourseRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final UserCourseRepository userCourseRepository;
     private final SectionRepository sectionRepository;
-    private final LessonRepository lessonRepository;
+    private final ContentRepository contentRepository;
     private final SectionService sectionService;
     private final SupabaseStorageService supabaseStorageService;
 
@@ -136,7 +136,7 @@ public class CourseService {
                         .collect(Collectors.toList()) : null)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt());
-        applySectionLessonCounts(builder, course.getId());
+        applySectionContentCounts(builder, course.getId());
         return builder.build();
     }
 
@@ -151,13 +151,13 @@ public class CourseService {
                 .sections(null)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt());
-        applySectionLessonCounts(builder, course.getId());
+        applySectionContentCounts(builder, course.getId());
         return builder.build();
     }
 
-    private void applySectionLessonCounts(CourseResponse.CourseResponseBuilder builder, UUID courseId) {
+    private void applySectionContentCounts(CourseResponse.CourseResponseBuilder builder, UUID courseId) {
         int sections = (int) sectionRepository.countByCourseId(courseId);
-        int lessons = (int) lessonRepository.countByCourseId(courseId);
-        builder.sectionCount(sections).lessonCount(lessons);
+        int contents = (int) contentRepository.countByCourseId(courseId);
+        builder.sectionCount(sections).contentCount(contents);
     }
 }

@@ -17,8 +17,8 @@ public class CourseResponse {
     private String colorCode;
     /** Number of sections (chặng) in the course; set even when {@code sections} list is omitted. */
     private int sectionCount;
-    /** Total lessons across all sections; set even when {@code sections} list is omitted. */
-    private int lessonCount;
+    /** Total contents across all sections; set even when {@code sections} list is omitted. */
+    private int contentCount;
     private List<SectionSummaryResponse> sections;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

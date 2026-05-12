@@ -1,6 +1,7 @@
 package com.medicology.learning.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.medicology.learning.common.pagination.PaginatedResponse;
 import com.medicology.learning.dto.common.ApiResponse;
 import com.medicology.learning.dto.request.CreateCourseMultipartRequest;
 import com.medicology.learning.dto.request.CourseRequest;
@@ -38,20 +39,26 @@ public class CourseController {
     private final Validator validator;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CourseResponse>>> getAllCourses() {
-        return ResponseEntity.ok(ApiResponse.success(courseService.getAllCourses()));
+    public ResponseEntity<ApiResponse<PaginatedResponse<CourseResponse>>> getAllCourses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.success(PaginatedResponse.fromList(courseService.getAllCourses(), page, size)));
     }
 
     @GetMapping("/enrolled")
-    public ResponseEntity<ApiResponse<List<CourseResponse>>> getEnrolledCourses(
-            @AuthenticationPrincipal UserPrincipal user) {
-        return ResponseEntity.ok(ApiResponse.success(courseService.getEnrolledCourses(user.getId())));
+    public ResponseEntity<ApiResponse<PaginatedResponse<CourseResponse>>> getEnrolledCourses(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.success(PaginatedResponse.fromList(courseService.getEnrolledCourses(user.getId()), page, size)));
     }
 
     @GetMapping("/student/available")
-    public ResponseEntity<ApiResponse<List<CourseResponse>>> getAvailableCoursesForStudent(
-            @AuthenticationPrincipal UserPrincipal user) {
-        return ResponseEntity.ok(ApiResponse.success(courseService.getAvailableCoursesForStudent(user.getId())));
+    public ResponseEntity<ApiResponse<PaginatedResponse<CourseResponse>>> getAvailableCoursesForStudent(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.success(PaginatedResponse.fromList(courseService.getAvailableCoursesForStudent(user.getId()), page, size)));
     }
 
     @GetMapping("/{courseId}")

@@ -56,7 +56,6 @@ public class SecurityConfig {
                                 // đầu
                                 // không)
                                 .requestMatchers("/api/v1/auth/**").permitAll()
-                                .requestMatchers("/api/v1/learning/internal/**").permitAll()
 
                                 // 3. Các request khác mới cần login
                                 .anyRequest().authenticated())

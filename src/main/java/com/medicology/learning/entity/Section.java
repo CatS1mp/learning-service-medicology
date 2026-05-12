@@ -42,7 +42,7 @@ public class Section {
 
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("orderIndex ASC")
-    private List<Lesson> lessons;
+    private List<Content> contents;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

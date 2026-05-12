@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class SectionService {
     private final SectionRepository sectionRepository;
     private final CourseRepository courseRepository;
-    private final LessonService lessonService;
+    private final ContentService contentService;
 
     public List<SectionSummaryResponse> getSectionsByCourse(UUID courseId) {
         return sectionRepository.findByCourseIdOrderByOrderIndexAsc(courseId).stream()
@@ -74,8 +74,8 @@ public class SectionService {
                 .slug(section.getSlug())
                 .orderIndex(section.getOrderIndex())
                 .estimatedDurationMinutes(section.getEstimatedDurationMinutes())
-                .lessons(section.getLessons() != null ? section.getLessons().stream()
-                        .map(lessonService::mapToSummaryResponse)
+                .contents(section.getContents() != null ? section.getContents().stream()
+                        .map(contentService::mapToSummaryResponse)
                         .collect(Collectors.toList()) : null)
                 .createdAt(section.getCreatedAt())
                 .updatedAt(section.getUpdatedAt())
@@ -89,8 +89,8 @@ public class SectionService {
                 .slug(section.getSlug())
                 .orderIndex(section.getOrderIndex())
                 .estimatedDurationMinutes(section.getEstimatedDurationMinutes())
-                .lessons(section.getLessons() != null ? section.getLessons().stream()
-                        .map(lessonService::mapToSummaryResponse)
+                .contents(section.getContents() != null ? section.getContents().stream()
+                        .map(contentService::mapToSummaryResponse)
                         .collect(Collectors.toList()) : null)
                 .createdAt(section.getCreatedAt())
                 .updatedAt(section.getUpdatedAt())
