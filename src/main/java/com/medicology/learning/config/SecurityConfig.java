@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 public class SecurityConfig {
         private final JwtAuthenticationFilter jwtAuthFilter; // Filter bạn đã viết
+        private final LearningInternalServiceAuthFilter learningInternalServiceAuthFilter;
 
         @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8081}")
         private String corsAllowedOrigins;
@@ -56,6 +57,7 @@ public class SecurityConfig {
                                 // đầu
                                 // không)
                                 .requestMatchers("/api/v1/auth/**").permitAll()
+                                .requestMatchers("/api/v1/learning/internal/**").permitAll()
 
                                 // 3. Các request khác mới cần login
                                 .anyRequest().authenticated())
@@ -63,6 +65,7 @@ public class SecurityConfig {
                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                         // 5. CHÈN FILTER: Chạy JwtAuthFilter TRƯỚC UsernamePasswordAuthenticationFilter
+                        .addFilterBefore(learningInternalServiceAuthFilter, UsernamePasswordAuthenticationFilter.class)
                         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();
