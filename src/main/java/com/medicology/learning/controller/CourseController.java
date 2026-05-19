@@ -6,6 +6,9 @@ import com.medicology.learning.dto.common.ApiResponse;
 import com.medicology.learning.dto.request.CreateCourseMultipartRequest;
 import com.medicology.learning.dto.request.CourseRequest;
 import com.medicology.learning.dto.response.CourseResponse;
+import com.medicology.learning.dto.response.CourseRoadmapResponse;
+import com.medicology.learning.service.CourseRoadmapService;
+import com.medicology.learning.service.ProgressService;
 import com.medicology.learning.exception.InvalidRequestException;
 import com.medicology.learning.service.CourseService;
 import com.medicology.learning.wrapper.UserPrincipal;
@@ -35,6 +38,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CourseController {
     private final CourseService courseService;
+    private final CourseRoadmapService courseRoadmapService;
+    private final ProgressService progressService;
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
@@ -69,6 +74,14 @@ public class CourseController {
     @GetMapping("/{courseId}/roadmap")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourseRoadmap(@PathVariable UUID courseId) {
         return ResponseEntity.ok(ApiResponse.success(courseService.getCourseRoadmap(courseId)));
+    }
+
+    @GetMapping("/slug/{slug}/learner-roadmap")
+    public ResponseEntity<ApiResponse<CourseRoadmapResponse>> getLearnerRoadmapBySlug(
+            @PathVariable String slug,
+            @AuthenticationPrincipal UserPrincipal user) {
+        var snapshot = progressService.loadSnapshot(user.getId());
+        return ResponseEntity.ok(ApiResponse.success(courseRoadmapService.buildLearnerRoadmap(slug, snapshot)));
     }
 
     @GetMapping("/path")
@@ -134,7 +147,7 @@ public class CourseController {
         } catch (ConstraintViolationException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new InvalidRequestException("Part 'request' must contain valid JSON for course data", ex);
+            throw new InvalidRequestException("Phần 'request' phải chứa JSON hợp lệ cho dữ liệu khóa học.", ex);
         }
     }
 }

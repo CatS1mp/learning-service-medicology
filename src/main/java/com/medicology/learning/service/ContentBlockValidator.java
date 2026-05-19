@@ -35,19 +35,19 @@ public class ContentBlockValidator {
 
     private void validateBasicFields(String path, ContentBlockRequest block, Set<Integer> orderIndexes) {
         if (block == null) {
-            throw new InvalidRequestException(path + " must not be null.");
+            throw new InvalidRequestException(path + " không được để trống.");
         }
         if (block.getOrderIndex() == null) {
-            throw new InvalidRequestException(path + ".orderIndex is required.");
+            throw new InvalidRequestException(path + ".orderIndex là bắt buộc.");
         }
         if (!orderIndexes.add(block.getOrderIndex())) {
-            throw new InvalidRequestException("Duplicate block orderIndex: " + block.getOrderIndex());
+            throw new InvalidRequestException("Trùng orderIndex khối: " + block.getOrderIndex());
         }
         if (block.getKind() == null) {
-            throw new InvalidRequestException(path + ".kind is required.");
+            throw new InvalidRequestException(path + ".kind là bắt buộc.");
         }
         if (block.getPayload() == null || block.getPayload().isBlank()) {
-            throw new InvalidRequestException(path + ".payload is required.");
+            throw new InvalidRequestException(path + ".payload là bắt buộc.");
         }
     }
 
@@ -55,7 +55,7 @@ public class ContentBlockValidator {
         try {
             return objectMapper.readTree(payload);
         } catch (Exception ex) {
-            throw new InvalidRequestException(path + ".payload must be valid JSON.", ex);
+            throw new InvalidRequestException(path + ".payload phải là JSON hợp lệ.", ex);
         }
     }
 
@@ -85,18 +85,18 @@ public class ContentBlockValidator {
                 requireFields(path, payloadNode, "title", "events");
                 requireArrayMin(path, payloadNode, "events", 1);
             }
-            default -> throw new InvalidRequestException(path + ".kind is not supported.");
+            default -> throw new InvalidRequestException(path + ".kind không được hỗ trợ.");
         }
     }
 
     private void validateGradableFields(String path, ContentBlockRequest block) {
         if (Boolean.TRUE.equals(block.getIsGradable())) {
             if (block.getMaxScore() == null || block.getMaxScore() < 1) {
-                throw new InvalidRequestException(path + ".maxScore must be at least 1 when isGradable=true.");
+                throw new InvalidRequestException(path + ".maxScore phải ≥ 1 khi isGradable=true.");
             }
         } else {
             if (block.getMaxScore() != null) {
-                throw new InvalidRequestException(path + ".maxScore must be null when isGradable is false or omitted.");
+                throw new InvalidRequestException(path + ".maxScore phải null khi isGradable=false hoặc bỏ qua.");
             }
         }
     }
@@ -105,7 +105,7 @@ public class ContentBlockValidator {
         for (String field : fields) {
             JsonNode value = payloadNode.get(field);
             if (value == null || value.isNull() || (value.isTextual() && value.asText().isBlank())) {
-                throw new InvalidRequestException(path + ".payload." + field + " is required for this kind.");
+                throw new InvalidRequestException(path + ".payload." + field + " là bắt buộc cho loại khối này.");
             }
         }
     }
@@ -113,7 +113,8 @@ public class ContentBlockValidator {
     private void requireArrayMin(String path, JsonNode payloadNode, String field, int minSize) {
         JsonNode value = payloadNode.get(field);
         if (value == null || !value.isArray() || value.size() < minSize) {
-            throw new InvalidRequestException(path + ".payload." + field + " must contain at least " + minSize + " item(s).");
+            throw new InvalidRequestException(
+                    path + ".payload." + field + " phải có ít nhất " + minSize + " phần tử.");
         }
     }
 
@@ -125,13 +126,14 @@ public class ContentBlockValidator {
             if (hasNonBlankText(payloadNode, "imageUrl") || hasNonBlankText(payloadNode, "videoUrl")) {
                 return;
             }
-            throw new InvalidRequestException(path + ".payload.mediaType is required when both imageUrl and videoUrl are missing.");
+            throw new InvalidRequestException(
+                    path + ".payload.mediaType là bắt buộc khi thiếu cả imageUrl và videoUrl.");
         }
 
         switch (mediaType) {
             case "image" -> requireFields(path, payloadNode, "imageUrl");
             case "video" -> requireFields(path, payloadNode, "videoUrl");
-            default -> throw new InvalidRequestException(path + ".payload.mediaType must be either 'image' or 'video'.");
+            default -> throw new InvalidRequestException(path + ".payload.mediaType phải là 'image' hoặc 'video'.");
         }
     }
 
