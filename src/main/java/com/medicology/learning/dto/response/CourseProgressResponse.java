@@ -14,4 +14,6 @@ public class CourseProgressResponse {
     private String courseSlug;
     private LocalDateTime lastStudiedAt;
     private Integer completionPercent;
+    private Integer completedContentCount;
+    private Integer totalContentCount;
 }

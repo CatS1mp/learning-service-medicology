@@ -3,6 +3,9 @@ package com.medicology.learning.controller;
 import com.medicology.learning.dto.common.ApiResponse;
 import com.medicology.learning.dto.response.CourseProgressResponse;
 import com.medicology.learning.dto.response.ContentActivitySummaryResponse;
+import com.medicology.learning.dto.response.DashboardProgressResponse;
+import com.medicology.learning.dto.response.RecommendationContextItemResponse;
+import com.medicology.learning.service.RecommendationContextService;
 import com.medicology.learning.entity.UserDailyStreak;
 import com.medicology.learning.service.ProgressService;
 import com.medicology.learning.wrapper.UserPrincipal;
@@ -22,6 +25,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 @RequiredArgsConstructor
 public class ProgressController {
     private final ProgressService progressService;
+    private final RecommendationContextService recommendationContextService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CourseProgressResponse>>> getProgress(@AuthenticationPrincipal UserPrincipal user) {
@@ -33,9 +37,25 @@ public class ProgressController {
             @PathVariable UUID userId,
             @AuthenticationPrincipal UserPrincipal user) {
         if (!user.getId().equals(userId) && !user.isAdmin()) {
-            throw new ResponseStatusException(FORBIDDEN, "Cannot view another user's progress");
+            throw new ResponseStatusException(FORBIDDEN, "Không thể xem tiến độ của người dùng khác.");
         }
         return ResponseEntity.ok(ApiResponse.success(progressService.getUserProgress(userId)));
+    }
+
+    @GetMapping("/recommendation-context")
+    public ResponseEntity<ApiResponse<java.util.List<RecommendationContextItemResponse>>> getRecommendationContext(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(defaultValue = "8") int limit) {
+        var snapshot = progressService.loadSnapshot(user.getId());
+        return ResponseEntity.ok(ApiResponse.success(
+                recommendationContextService.buildRecentContext(snapshot, limit)));
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<ApiResponse<DashboardProgressResponse>> getDashboardProgress(
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(defaultValue = "7") int activityDays) {
+        return ResponseEntity.ok(ApiResponse.success(progressService.getDashboardProgress(user.getId(), activityDays)));
     }
 
     @GetMapping("/activity")
@@ -49,7 +69,7 @@ public class ProgressController {
     public ResponseEntity<ApiResponse<UserDailyStreak>> pingStreak(@AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
-                "Streak updated successfully",
+                "Đã cập nhật chuỗi ngày học.",
                 progressService.updateStreak(user.getId())));
     }
 
@@ -57,7 +77,7 @@ public class ProgressController {
     public ResponseEntity<ApiResponse<UserDailyStreak>> pingStreakGet(@AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
-                "Streak updated successfully",
+                "Đã cập nhật chuỗi ngày học.",
                 progressService.updateStreak(user.getId())));
     }
 }

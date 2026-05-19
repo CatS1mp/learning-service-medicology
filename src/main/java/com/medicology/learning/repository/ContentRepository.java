@@ -13,9 +13,17 @@ import java.util.UUID;
 public interface ContentRepository extends JpaRepository<Content, UUID> {
     List<Content> findBySectionIdOrderByOrderIndexAsc(UUID sectionId);
 
+    @Query(
+            "SELECT c FROM Content c WHERE c.section.id IN :sectionIds ORDER BY c.section.id, c.orderIndex ASC")
+    List<Content> findBySectionIdInOrderByOrderIndexAsc(@Param("sectionIds") List<UUID> sectionIds);
+
     @Query("select count(c) from Content c where c.section.course.id = :courseId")
     long countByCourseId(@Param("courseId") UUID courseId);
 
     @Query("select c.id from Content c where c.section.course.id = :courseId")
     List<UUID> findIdsByCourseId(@Param("courseId") UUID courseId);
+
+    @Query(
+            "select c from Content c join fetch c.section s join fetch s.course where c.id in :ids")
+    List<Content> findAllByIdInWithSectionAndCourse(@Param("ids") List<UUID> ids);
 }
