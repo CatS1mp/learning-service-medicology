@@ -102,21 +102,21 @@ public class SupabaseStorageService {
 
     private void validateFile(MultipartFile iconFile) {
         if (iconFile == null || iconFile.isEmpty()) {
-            throw new InvalidFileException("Course icon file is required");
+            throw new InvalidFileException("Cần tải lên ảnh biểu tượng khóa học.");
         }
 
         try {
             BufferedImage image = ImageIO.read(iconFile.getInputStream());
             if (image == null) {
-                throw new InvalidFileException("Course icon must be a valid image file");
+                throw new InvalidFileException("Ảnh biểu tượng khóa học phải là tệp ảnh hợp lệ.");
             }
 
             if (image.getWidth() * REQUIRED_ICON_RATIO_HEIGHT != image.getHeight() * REQUIRED_ICON_RATIO_WIDTH) {
                 throw new InvalidFileException(
-                        "Course icon must use a 4:3 aspect ratio, for example 256x192 pixels");
+                        "Ảnh biểu tượng khóa học phải có tỷ lệ 4:3, ví dụ 256x192 pixel.");
             }
         } catch (IOException ex) {
-            throw new InvalidFileException("Unable to read course icon file");
+            throw new InvalidFileException("Không đọc được tệp ảnh biểu tượng khóa học.");
         }
     }
 

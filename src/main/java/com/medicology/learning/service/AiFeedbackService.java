@@ -63,7 +63,7 @@ public class AiFeedbackService {
 
     public AiFeedbackResponse updateFeedback(UUID id, UUID userId, boolean admin, AiFeedbackUpdateRequest request) {
         AiLearningFeedback feedback = aiFeedbackRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Feedback not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phản hồi."));
         if (!admin && !feedback.getUserId().equals(userId)) {
             throw new ResponseStatusException(FORBIDDEN, "Not allowed to update this feedback");
         }
@@ -74,7 +74,7 @@ public class AiFeedbackService {
 
     public void deleteFeedback(UUID id, UUID userId, boolean admin) {
         AiLearningFeedback feedback = aiFeedbackRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Feedback not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phản hồi."));
         if (!admin && !feedback.getUserId().equals(userId)) {
             throw new ResponseStatusException(FORBIDDEN, "Not allowed to delete this feedback");
         }

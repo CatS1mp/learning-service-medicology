@@ -30,12 +30,12 @@ public class SectionService {
     public SectionResponse getSectionById(UUID sectionId) {
         return sectionRepository.findById(sectionId)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Section not found with ID: " + sectionId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chương với ID: " + sectionId));
     }
 
     public SectionResponse createSection(SectionRequest request) {
         Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + request.getCourseId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khóa học với ID: " + request.getCourseId()));
         Section section = Section.builder()
                 .course(course)
                 .name(request.getName())
@@ -48,9 +48,9 @@ public class SectionService {
 
     public SectionResponse updateSection(UUID id, SectionRequest request) {
         Section section = sectionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Section not found with ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chương với ID: " + id));
         Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + request.getCourseId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khóa học với ID: " + request.getCourseId()));
         section.setCourse(course);
         section.setName(request.getName());
         section.setSlug(request.getSlug());
@@ -61,7 +61,7 @@ public class SectionService {
 
     public void deleteSection(UUID id) {
         if (!sectionRepository.existsById(id)) {
-            throw new IllegalArgumentException("Section not found with ID: " + id);
+            throw new IllegalArgumentException("Không tìm thấy chương với ID: " + id);
         }
         sectionRepository.deleteById(id);
     }

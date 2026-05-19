@@ -22,7 +22,7 @@ public class ContentBlockTemplateService {
 
     public ContentBlockTemplateResponse getTemplateDetail(UUID templateId) {
         ContentBlockTemplate template = contentBlockTemplateRepository.findById(templateId)
-                .orElseThrow(() -> new IllegalArgumentException("Content block template not found with ID: " + templateId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mẫu khối nội dung với ID: " + templateId));
         return mapToResponse(template);
     }
 

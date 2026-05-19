@@ -40,7 +40,7 @@ public class CourseService {
     public CourseResponse getCourseById(UUID courseId) {
         return courseRepository.findById(courseId)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khóa học với ID: " + courseId));
     }
 
     public CourseResponse getCourseRoadmap(UUID courseId) {
@@ -62,7 +62,7 @@ public class CourseService {
 
     public CourseResponse updateCourse(UUID courseId, CourseRequest request) {
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khóa học với ID: " + courseId));
         course.setName(request.getName());
         course.setSlug(request.getSlug());
         course.setDescription(request.getDescription());
@@ -73,7 +73,7 @@ public class CourseService {
 
     public void deleteCourse(UUID courseId) {
         if (!courseRepository.existsById(courseId)) {
-            throw new IllegalArgumentException("Course not found with ID: " + courseId);
+            throw new IllegalArgumentException("Không tìm thấy khóa học với ID: " + courseId);
         }
         courseRepository.deleteById(courseId);
     }
@@ -107,7 +107,7 @@ public class CourseService {
 
     public void enrollCourse(UUID userId, UUID courseId) {
         courseRepository.findById(courseId)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khóa học với ID: " + courseId));
 
         UserCourse userCourse = userCourseRepository.findByUserIdAndCourseId(userId, courseId)
                 .map(existing -> {

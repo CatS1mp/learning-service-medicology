@@ -73,7 +73,7 @@ public class GlobalExceptionHandler {
         String errorMessage = ex.getConstraintViolations().stream()
                 .findFirst()
                 .map(violation -> violation.getMessage())
-                .orElse("Invalid request");
+                .orElse("Yêu cầu không hợp lệ");
         String details = ex.getConstraintViolations().stream()
                 .map(violation -> violation.getPropertyPath() + " " + violation.getMessage())
                 .collect(Collectors.joining("; "));
@@ -138,7 +138,7 @@ public class GlobalExceptionHandler {
         HttpStatus status = duplicateMessage != null ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
         String responseMessage = duplicateMessage != null
                 ? duplicateMessage
-                : "Du lieu khong hop le hoac vi pham rang buoc trong database.";
+                : "Dữ liệu không hợp lệ hoặc vi phạm ràng buộc trong cơ sở dữ liệu.";
 
         log.warn(
                 "Data integrity violation at [{} {}] - message: {} - root: {}",
@@ -169,7 +169,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_GATEWAY.value(),
-                "Khong the tai anh len storage. Vui long thu lai sau.",
+                "Không thể tải ảnh lên storage. Vui lòng thử lại sau.",
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_GATEWAY);
@@ -219,17 +219,17 @@ public class GlobalExceptionHandler {
 
         Matcher matcher = Pattern.compile("Key \\(([^)]+)\\)=\\(([^)]*)\\) already exists\\.").matcher(message);
         if (!matcher.find()) {
-            return "Du lieu bi trung voi mot ban ghi da ton tai.";
+            return "Dữ liệu bị trùng với một bản ghi đã tồn tại.";
         }
 
         String field = matcher.group(1);
         String value = matcher.group(2);
 
         if ("slug".equalsIgnoreCase(field)) {
-            return "Slug '" + value + "' da ton tai.";
+            return "Slug '" + value + "' đã tồn tại.";
         }
 
-        return "Gia tri '" + value + "' cua truong '" + humanizeField(field) + "' da ton tai.";
+        return "Giá trị '" + value + "' của trường '" + humanizeField(field) + "' đã tồn tại.";
     }
 
     private String humanizeField(String field) {

@@ -50,13 +50,13 @@ public class ContentService {
     public ContentResponse getContentDetail(UUID contentId) {
         return contentRepository.findById(contentId)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found with ID: " + contentId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nội dung với ID: " + contentId));
     }
 
     @Transactional
     public ContentResponse createContent(ContentRequest request) {
         Section section = sectionRepository.findById(request.getSectionId())
-                .orElseThrow(() -> new IllegalArgumentException("Section not found with ID: " + request.getSectionId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chương với ID: " + request.getSectionId()));
         contentBlockValidator.validate(request.getBlocks());
         Content content = Content.builder()
                 .section(section)
@@ -76,9 +76,9 @@ public class ContentService {
     @Transactional
     public ContentResponse updateContent(UUID contentId, ContentRequest request) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found with ID: " + contentId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nội dung với ID: " + contentId));
         Section section = sectionRepository.findById(request.getSectionId())
-                .orElseThrow(() -> new IllegalArgumentException("Section not found with ID: " + request.getSectionId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chương với ID: " + request.getSectionId()));
         contentBlockValidator.validate(request.getBlocks());
         content.setSection(section);
         content.setName(request.getName());
@@ -113,14 +113,14 @@ public class ContentService {
 
     public ContentResponse updateContentStatus(UUID contentId, ContentStatusRequest request) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found with ID: " + contentId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nội dung với ID: " + contentId));
         content.setIsActive(request.getIsActive());
         return mapToResponse(contentRepository.save(content));
     }
 
     public void deleteContent(UUID contentId) {
         if (!contentRepository.existsById(contentId)) {
-            throw new IllegalArgumentException("Content not found with ID: " + contentId);
+            throw new IllegalArgumentException("Không tìm thấy nội dung với ID: " + contentId);
         }
         contentRepository.deleteById(contentId);
     }
@@ -128,7 +128,7 @@ public class ContentService {
     @Transactional
     public ContentBlockProgressResponse upsertContentBlockProgress(ContentBlockProgressUpsertRequest request) {
         ContentBlock block = contentBlockRepository.findById(request.contentBlockId())
-                .orElseThrow(() -> new IllegalArgumentException("Content block not found: " + request.contentBlockId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khối nội dung: " + request.contentBlockId()));
 
         ContentBlockProgress progress = contentBlockProgressRepository
                 .findByAttemptIdAndContentBlockId(request.attemptId(), request.contentBlockId())
@@ -151,7 +151,7 @@ public class ContentService {
 
     public ContentMetaInternalResponse getContentMetaForInternal(UUID contentId) {
         Content content = contentRepository.findById(contentId)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found: " + contentId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nội dung: " + contentId));
         return ContentMetaInternalResponse.builder()
                 .id(content.getId())
                 .estimatedDurationMinutes(content.getEstimatedDurationMinutes())
@@ -160,7 +160,7 @@ public class ContentService {
 
     public ContentBlockInternalResponse getContentBlockForInternal(UUID blockId) {
         ContentBlock block = contentBlockRepository.findById(blockId)
-                .orElseThrow(() -> new IllegalArgumentException("Content block not found: " + blockId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khối nội dung: " + blockId));
         return ContentBlockInternalResponse.builder()
                 .id(block.getId())
                 .contentId(block.getContent().getId())
