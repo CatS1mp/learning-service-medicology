@@ -108,6 +108,9 @@ public class ContentService {
             return;
         }
         blocks.clear();
+        // Orphan removals are pending until flush; without this Hibernate can INSERT new rows
+        // before DELETE runs, violating uk_content_block_content_order (content_id + order_index).
+        contentRepository.flush();
         blocks.addAll(newBlocks);
     }
 
