@@ -6,8 +6,10 @@ import com.medicology.learning.dto.response.SectionResponse;
 import com.medicology.learning.dto.response.SectionSummaryResponse;
 import com.medicology.learning.service.SectionService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,9 +26,10 @@ public class SectionController {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getSectionsByCourse(courseId)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/courses/{courseId}/sections")
     public ResponseEntity<ApiResponse<SectionResponse>> createSectionInCourse(
-            @PathVariable UUID courseId, @RequestBody SectionRequest request) {
+            @PathVariable UUID courseId, @Valid @RequestBody SectionRequest request) {
         request.setCourseId(courseId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(HttpStatus.CREATED.value(), "Section created successfully",
@@ -38,14 +41,16 @@ public class SectionController {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getSectionById(sectionId)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/sections/{sectionId}")
-    public ResponseEntity<ApiResponse<SectionResponse>> updateSection(@PathVariable UUID sectionId, @RequestBody SectionRequest request) {
+    public ResponseEntity<ApiResponse<SectionResponse>> updateSection(@PathVariable UUID sectionId, @Valid @RequestBody SectionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Section updated successfully",
                 sectionService.updateSection(sectionId, request)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/sections/{sectionId}")
     public ResponseEntity<ApiResponse<Void>> deleteSection(@PathVariable UUID sectionId) {
         sectionService.deleteSection(sectionId);

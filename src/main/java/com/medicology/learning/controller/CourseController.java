@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -111,6 +112,7 @@ public class CourseController {
                     )
             )
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<CourseResponse>> createCourse(
             @Parameter(hidden = true) @RequestPart("request") String requestJson,
@@ -122,6 +124,7 @@ public class CourseController {
                         courseService.createCourse(request, iconFile)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{courseId}")
     public ResponseEntity<ApiResponse<CourseResponse>> updateCourse(@PathVariable UUID courseId, @Valid @RequestBody CourseRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -130,6 +133,7 @@ public class CourseController {
                 courseService.updateCourse(courseId, request)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{courseId}")
     public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable UUID courseId) {
         courseService.deleteCourse(courseId);

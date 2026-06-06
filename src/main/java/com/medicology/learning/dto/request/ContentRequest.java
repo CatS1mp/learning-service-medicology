@@ -1,5 +1,6 @@
 package com.medicology.learning.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.UUID;
 @Data
 public class ContentRequest {
     private UUID sectionId;
+    @NotBlank(message = "Tên content không được để trống")
     private String name;
     private String description;
     private String slug;

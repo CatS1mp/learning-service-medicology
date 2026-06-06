@@ -6,9 +6,11 @@ import com.medicology.learning.dto.request.ContentStatusRequest;
 import com.medicology.learning.dto.response.ContentResponse;
 import com.medicology.learning.dto.response.ContentSummaryResponse;
 import com.medicology.learning.service.ContentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,9 +32,10 @@ public class ContentController {
         return ResponseEntity.ok(ApiResponse.success(contentService.getContentDetail(contentId)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping({"/contents", "/sections/{sectionId}/contents"})
     public ResponseEntity<ApiResponse<ContentResponse>> createContent(@PathVariable(required = false) UUID sectionId,
-            @RequestBody ContentRequest request) {
+            @Valid @RequestBody ContentRequest request) {
         if (sectionId != null) {
             request.setSectionId(sectionId);
         }
@@ -41,20 +44,23 @@ public class ContentController {
                         contentService.createContent(request)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/contents/{contentId}")
-    public ResponseEntity<ApiResponse<ContentResponse>> updateContent(@PathVariable UUID contentId, @RequestBody ContentRequest request) {
+    public ResponseEntity<ApiResponse<ContentResponse>> updateContent(@PathVariable UUID contentId, @Valid @RequestBody ContentRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Content updated successfully",
                 contentService.updateContent(contentId, request)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/contents/{contentId}")
     public ResponseEntity<ApiResponse<Void>> deleteContent(@PathVariable UUID contentId) {
         contentService.deleteContent(contentId);
         return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK.value(), "Content deleted successfully", null));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/contents/{contentId}/status")
     public ResponseEntity<ApiResponse<ContentResponse>> updateContentStatus(@PathVariable UUID contentId, @RequestBody ContentStatusRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
